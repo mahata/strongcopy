@@ -1,5 +1,7 @@
 # strongcopy
 
+[![CI](https://github.com/mahata/strongcopy/actions/workflows/ci.yml/badge.svg)](https://github.com/mahata/strongcopy/actions/workflows/ci.yml)
+
 A Swift macOS application for strong copy functionality.
 
 ## Overview
