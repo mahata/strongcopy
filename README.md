@@ -1,12 +1,22 @@
-# strongcopy
+# Strongcopy
 
 [![CI](https://github.com/mahata/strongcopy/actions/workflows/ci.yml/badge.svg)](https://github.com/mahata/strongcopy/actions/workflows/ci.yml)
 
-A Swift macOS application for strong copy functionality.
+A macOS utility that confirms when data has been copied to the clipboard.
 
 ## Overview
 
-This is a Hello World scaffolding app in Swift for macOS, designed to support TDD-style development.
+Strongcopy runs as a background accessory app. It watches the macOS pasteboard
+change counter and briefly displays a non-activating **Copied** HUD near the
+top-right of the screen whenever the clipboard changes.
+
+Strongcopy does not read, log, or retain clipboard contents. It also does not
+require Accessibility or notification permission.
+
+> [!NOTE]
+> Strongcopy observes pasteboard changes rather than intercepting Command-C.
+> Clipboard updates made by menus, scripts, password managers, or other apps
+> therefore produce the same feedback.
 
 ## Requirements
 
@@ -45,7 +55,11 @@ Strongcopy/
 ├── Package.swift              # Swift Package Manager configuration
 ├── Sources/
 │   └── Strongcopy/
-│       └── Strongcopy.swift   # Main application code
+│       ├── Strongcopy.swift        # Application entry point
+│       ├── AppDelegate.swift       # Application lifecycle
+│       ├── ClipboardMonitor.swift  # Pasteboard change detection
+│       ├── CopyFeedback.swift      # HUD feedback
+│       └── Scheduling.swift        # Timer abstraction
 └── Tests/
     └── StrongcopyTests/
         └── StrongcopyTests.swift  # Unit tests
@@ -61,12 +75,11 @@ open Package.swift
 
 Or double-click `Package.swift` in Finder.
 
-### Adding New Features
+### Current scope
 
-1. Write a failing test in `Tests/StrongcopyTests/StrongcopyTests.swift`
-2. Implement the feature in `Sources/Strongcopy/Strongcopy.swift`
-3. Run tests to verify: `swift test`
-4. Refactor as needed
+The initial milestone uses fixed polling and display durations. Preferences,
+launch at login, sounds, application packaging, and global Command-C event
+capture are not implemented yet.
 
 ## License
 
