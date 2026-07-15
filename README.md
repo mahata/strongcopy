@@ -8,7 +8,8 @@ A macOS utility that confirms when data has been copied to the clipboard.
 
 Strongcopy runs as a background accessory app. It watches the macOS pasteboard
 change counter and briefly displays a non-activating **Copied** HUD near the
-mouse pointer whenever the clipboard changes.
+mouse pointer whenever the clipboard changes. A clipboard icon in the menu bar
+confirms that Strongcopy is running and provides **About** and **Quit** actions.
 
 Strongcopy does not read, log, or retain clipboard contents. It also does not
 require Accessibility or notification permission.
@@ -35,8 +36,9 @@ require Accessibility or notification permission.
 
 Release builds are signed with a Developer ID certificate and notarized by
 Apple, so macOS Gatekeeper can verify them without requiring a security
-override. Strongcopy runs without a Dock icon; quit it with Activity Monitor or
-by logging out.
+override. Strongcopy runs without a Dock icon; it adds a clipboard icon to the
+menu bar so you can confirm it is running. Click the menu bar icon and choose
+**Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
 
 ### Building the App
 
@@ -83,6 +85,7 @@ Strongcopy/
 │       ├── AppDelegate.swift       # Application lifecycle
 │       ├── ClipboardMonitor.swift  # Pasteboard change detection
 │       ├── CopyFeedback.swift      # HUD feedback
+│       ├── StatusItemController.swift # Menu bar status item
 │       └── Scheduling.swift        # Timer abstraction
 └── Tests/
     └── StrongcopyTests/
@@ -127,8 +130,8 @@ bundle build number.
 ### Current scope
 
 The initial milestone uses fixed polling and display durations. Preferences,
-launch at login, sounds, a branded app icon, and global Command-C event capture
-are not implemented yet.
+launch at login, sounds, and a branded app icon are not implemented yet. Global
+Command-C event capture is also out of scope.
 
 ## License
 

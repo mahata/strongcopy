@@ -4,8 +4,13 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var clipboardMonitor: ClipboardMonitor?
     private var feedbackController: CopyFeedbackController?
+    private var statusItemController: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let statusItemController = StatusItemController()
+        statusItemController.start()
+        self.statusItemController = statusItemController
+
         let scheduler = TimerScheduler()
         let feedbackController = CopyFeedbackController(
             presenter: CopyHUDPresenter(),
@@ -26,5 +31,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor?.stop()
         feedbackController?.stop()
+        statusItemController?.stop()
     }
 }

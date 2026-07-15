@@ -79,8 +79,7 @@ final class CopyFeedbackControllerTests: XCTestCase {
     }
 }
 
-final class CopyHUDPlacementTests: XCTestCase {
-    private let panelSize = NSSize(width: 132, height: 52)
+final class CopyHUDPlacementTests: XCTestCase {    private let panelSize = NSSize(width: 132, height: 52)
     private let pointerOffset = NSSize(width: 12, height: 12)
     private let visibleFrame = NSRect(x: 100, y: 200, width: 400, height: 300)
 
@@ -115,6 +114,52 @@ final class CopyHUDPlacementTests: XCTestCase {
         )
 
         XCTAssertEqual(origin, NSPoint(x: 100, y: 200))
+    }
+}
+
+final class AboutInfoTests: XCTestCase {
+    func testFormatsNameAndVersion() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "Strongcopy", version: "1.2.3"),
+            "Strongcopy 1.2.3"
+        )
+    }
+
+    func testFallsBackToDevWhenVersionMissing() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "Strongcopy", version: nil),
+            "Strongcopy (dev)"
+        )
+    }
+
+    func testFallsBackToDevWhenVersionBlank() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "Strongcopy", version: "  "),
+            "Strongcopy (dev)"
+        )
+    }
+
+    func testFallsBackToDefaultNameWhenNameMissing() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: nil, version: "1.0.0"),
+            "Strongcopy 1.0.0"
+        )
+    }
+
+    func testTrimsWhitespaceAroundNameAndVersion() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "  Strongcopy  ", version: "  2.0  "),
+            "Strongcopy 2.0"
+        )
+    }
+}
+
+final class StatusMenuItemTests: XCTestCase {
+    func testMenuItemOrderAndTitles() {
+        XCTAssertEqual(
+            StatusMenuItem.allCases.map(\.title),
+            ["About Strongcopy", "Quit Strongcopy"]
+        )
     }
 }
 
