@@ -3,9 +3,9 @@
 
 import Foundation
 
-/// Main application entry point for StrongCopy macOS app
+/// Main application entry point for Strongcopy macOS app
 @main
-struct StrongCopy {
+struct Strongcopy {
     static func main() {
         let app = Application()
         app.run()
@@ -28,6 +28,6 @@ public class Application {
     /// Returns a welcome message
     /// - Returns: A greeting string
     public func getWelcomeMessage() -> String {
-        return "Hello, World! Welcome to StrongCopy - a macOS app."
+        return "Hello, World! Welcome to Strongcopy - a macOS app."
     }
 }
