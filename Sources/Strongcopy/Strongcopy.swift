@@ -9,8 +9,8 @@ enum Strongcopy {
 
         application.delegate = delegate
         application.setActivationPolicy(.accessory)
-        application.run()
-
-        withExtendedLifetime(delegate) {}
+        withExtendedLifetime(delegate) {
+            application.run()
+        }
     }
 }

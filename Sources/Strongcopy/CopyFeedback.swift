@@ -82,9 +82,14 @@ final class CopyHUDPresenter: CopyFeedbackPresenting {
 
     private func panelOrigin() -> NSPoint {
         let mouseLocation = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(mouseLocation, $0.frame, false) }
+        guard let screen = NSScreen.screens.first(where: {
+            NSMouseInRect(mouseLocation, $0.frame, false)
+        })
             ?? NSScreen.main
-            ?? NSScreen.screens[0]
+            ?? NSScreen.screens.first
+        else {
+            return .zero
+        }
         let visibleFrame = screen.visibleFrame
 
         return NSPoint(
