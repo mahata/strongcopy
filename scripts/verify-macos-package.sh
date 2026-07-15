@@ -25,9 +25,9 @@ ATTACHED=0
 
 cleanup() {
     if [[ "$ATTACHED" -eq 1 ]]; then
-        hdiutil detach "$MOUNT_POINT" -quiet
+        hdiutil detach "$MOUNT_POINT" -quiet || true
     fi
-    rmdir "$MOUNT_POINT"
+    rmdir "$MOUNT_POINT" 2>/dev/null || true
 }
 trap cleanup EXIT
 
