@@ -118,6 +118,52 @@ final class CopyHUDPlacementTests: XCTestCase {
     }
 }
 
+final class AboutInfoTests: XCTestCase {
+    func testFormatsNameAndVersion() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "Strongcopy", version: "1.2.3"),
+            "Strongcopy 1.2.3"
+        )
+    }
+
+    func testFallsBackToDevWhenVersionMissing() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "Strongcopy", version: nil),
+            "Strongcopy (dev)"
+        )
+    }
+
+    func testFallsBackToDevWhenVersionBlank() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "Strongcopy", version: "  "),
+            "Strongcopy (dev)"
+        )
+    }
+
+    func testFallsBackToDefaultNameWhenNameMissing() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: nil, version: "1.0.0"),
+            "Strongcopy 1.0.0"
+        )
+    }
+
+    func testTrimsWhitespaceAroundNameAndVersion() {
+        XCTAssertEqual(
+            AboutInfo.displayText(name: "  Strongcopy  ", version: "  2.0  "),
+            "Strongcopy 2.0"
+        )
+    }
+}
+
+final class StatusMenuItemTests: XCTestCase {
+    func testMenuItemOrderAndTitles() {
+        XCTAssertEqual(
+            StatusMenuItem.allCases.map(\.title),
+            ["About Strongcopy", "Quit Strongcopy"]
+        )
+    }
+}
+
 @MainActor
 private final class FakePasteboard: PasteboardChangeCounting {
     var changeCount: Int
