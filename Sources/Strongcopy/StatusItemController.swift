@@ -1,11 +1,5 @@
 import AppKit
 
-@MainActor
-protocol StatusMenuActionHandling: AnyObject {
-    func showAbout()
-    func quit()
-}
-
 enum StatusItemAppearance {
     static let symbolName = "clipboard"
     static let accessibilityDescription = "Strongcopy"
@@ -29,7 +23,7 @@ enum StatusMenuItem: CaseIterable {
 enum AboutInfo {
     static func displayText(name: String?, version: String?) -> String {
         let resolvedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let baseName = (resolvedName?.isEmpty == false) ? resolvedName! : "Strongcopy"
+        let baseName = (resolvedName?.isEmpty == false) ? (resolvedName ?? "Strongcopy") : "Strongcopy"
 
         let resolvedVersion = version?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let resolvedVersion, !resolvedVersion.isEmpty else {
@@ -47,7 +41,7 @@ enum AboutInfo {
 }
 
 @MainActor
-final class StatusItemController: StatusMenuActionHandling {
+final class StatusItemController {
     private let bundle: Bundle
     private var statusItem: NSStatusItem?
 
@@ -82,7 +76,7 @@ final class StatusItemController: StatusMenuActionHandling {
         self.statusItem = nil
     }
 
-    func showAbout() {
+    private func showAbout() {
         NSApplication.shared.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = AboutInfo.displayText(bundle: bundle)
@@ -91,7 +85,7 @@ final class StatusItemController: StatusMenuActionHandling {
         alert.runModal()
     }
 
-    func quit() {
+    private func quit() {
         NSApplication.shared.terminate(nil)
     }
 

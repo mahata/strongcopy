@@ -79,7 +79,8 @@ final class CopyFeedbackControllerTests: XCTestCase {
     }
 }
 
-final class CopyHUDPlacementTests: XCTestCase {    private let panelSize = NSSize(width: 132, height: 52)
+final class CopyHUDPlacementTests: XCTestCase {
+    private let panelSize = NSSize(width: 132, height: 52)
     private let pointerOffset = NSSize(width: 12, height: 12)
     private let visibleFrame = NSRect(x: 100, y: 200, width: 400, height: 300)
 
