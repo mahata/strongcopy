@@ -8,7 +8,7 @@ A macOS utility that confirms when data has been copied to the clipboard.
 
 Strongcopy runs as a background accessory app. It watches the macOS pasteboard
 change counter and briefly displays a non-activating **Copied** HUD near the
-top-right of the screen whenever the clipboard changes.
+mouse pointer whenever the clipboard changes.
 
 Strongcopy does not read, log, or retain clipboard contents. It also does not
 require Accessibility or notification permission.
