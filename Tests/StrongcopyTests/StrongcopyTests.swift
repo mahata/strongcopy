@@ -1,7 +1,7 @@
 import XCTest
-@testable import StrongCopy
+@testable import Strongcopy
 
-final class StrongCopyTests: XCTestCase {
+final class StrongcopyTests: XCTestCase {
     
     var application: Application!
     
@@ -35,7 +35,7 @@ final class StrongCopyTests: XCTestCase {
         XCTAssertFalse(message.isEmpty)
         XCTAssertTrue(message.contains("Hello"))
         XCTAssertTrue(message.contains("World"))
-        XCTAssertTrue(message.contains("StrongCopy"))
+        XCTAssertTrue(message.contains("Strongcopy"))
     }
     
     func testStringOperations() throws {

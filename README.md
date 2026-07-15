@@ -1,4 +1,4 @@
-# strong-copy
+# strongcopy
 
 A Swift macOS application for strong copy functionality.
 
@@ -39,14 +39,14 @@ This project uses Swift Package Manager and follows a TDD (Test-Driven Developme
 ### Project Structure
 
 ```
-StrongCopy/
+Strongcopy/
 ├── Package.swift              # Swift Package Manager configuration
 ├── Sources/
-│   └── StrongCopy/
-│       └── StrongCopy.swift   # Main application code
+│   └── Strongcopy/
+│       └── Strongcopy.swift   # Main application code
 └── Tests/
-    └── StrongCopyTests/
-        └── StrongCopyTests.swift  # Unit tests
+    └── StrongcopyTests/
+        └── StrongcopyTests.swift  # Unit tests
 ```
 
 ### Opening in Xcode
@@ -61,8 +61,8 @@ Or double-click `Package.swift` in Finder.
 
 ### Adding New Features
 
-1. Write a failing test in `Tests/StrongCopyTests/StrongCopyTests.swift`
-2. Implement the feature in `Sources/StrongCopy/StrongCopy.swift`
+1. Write a failing test in `Tests/StrongcopyTests/StrongcopyTests.swift`
+2. Implement the feature in `Sources/Strongcopy/Strongcopy.swift`
 3. Run tests to verify: `swift test`
 4. Refactor as needed
 

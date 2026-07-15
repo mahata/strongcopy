@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "StrongCopy",
+    name: "Strongcopy",
     platforms: [
         .macOS(.v13)
     ],
@@ -12,11 +12,11 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
-            name: "StrongCopy"
+            name: "Strongcopy"
         ),
         .testTarget(
-            name: "StrongCopyTests",
-            dependencies: ["StrongCopy"]
+            name: "StrongcopyTests",
+            dependencies: ["Strongcopy"]
         ),
     ]
 )
