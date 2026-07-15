@@ -49,7 +49,7 @@ final class CopyFeedbackController {
 @MainActor
 final class CopyHUDPresenter: CopyFeedbackPresenting {
     private static let panelSize = NSSize(width: 132, height: 52)
-    private static let screenMargin: CGFloat = 24
+    private static let pointerOffset = NSSize(width: 12, height: 12)
 
     private lazy var panel: NSPanel = makePanel()
 
@@ -92,9 +92,34 @@ final class CopyHUDPresenter: CopyFeedbackPresenting {
         }
         let visibleFrame = screen.visibleFrame
 
+        return CopyHUDPlacement.panelOrigin(
+            pointerLocation: mouseLocation,
+            visibleFrame: visibleFrame,
+            panelSize: Self.panelSize,
+            pointerOffset: Self.pointerOffset
+        )
+    }
+}
+
+enum CopyHUDPlacement {
+    static func panelOrigin(
+        pointerLocation: NSPoint,
+        visibleFrame: NSRect,
+        panelSize: NSSize,
+        pointerOffset: NSSize
+    ) -> NSPoint {
+        let proposedOrigin = NSPoint(
+            x: pointerLocation.x + pointerOffset.width,
+            y: pointerLocation.y + pointerOffset.height
+        )
+        let maximumOrigin = NSPoint(
+            x: visibleFrame.maxX - panelSize.width,
+            y: visibleFrame.maxY - panelSize.height
+        )
+
         return NSPoint(
-            x: visibleFrame.maxX - Self.panelSize.width - Self.screenMargin,
-            y: visibleFrame.maxY - Self.panelSize.height - Self.screenMargin
+            x: min(max(proposedOrigin.x, visibleFrame.minX), maximumOrigin.x),
+            y: min(max(proposedOrigin.y, visibleFrame.minY), maximumOrigin.y)
         )
     }
 }

@@ -79,6 +79,45 @@ final class CopyFeedbackControllerTests: XCTestCase {
     }
 }
 
+final class CopyHUDPlacementTests: XCTestCase {
+    private let panelSize = NSSize(width: 132, height: 52)
+    private let pointerOffset = NSSize(width: 12, height: 12)
+    private let visibleFrame = NSRect(x: 100, y: 200, width: 400, height: 300)
+
+    func testPositionsPanelAboveAndToTheRightOfPointer() {
+        let origin = CopyHUDPlacement.panelOrigin(
+            pointerLocation: NSPoint(x: 250, y: 350),
+            visibleFrame: visibleFrame,
+            panelSize: panelSize,
+            pointerOffset: pointerOffset
+        )
+
+        XCTAssertEqual(origin, NSPoint(x: 262, y: 362))
+    }
+
+    func testClampsPanelToTopAndRightEdges() {
+        let origin = CopyHUDPlacement.panelOrigin(
+            pointerLocation: NSPoint(x: 490, y: 490),
+            visibleFrame: visibleFrame,
+            panelSize: panelSize,
+            pointerOffset: pointerOffset
+        )
+
+        XCTAssertEqual(origin, NSPoint(x: 368, y: 448))
+    }
+
+    func testClampsPanelToBottomAndLeftEdges() {
+        let origin = CopyHUDPlacement.panelOrigin(
+            pointerLocation: NSPoint(x: 80, y: 150),
+            visibleFrame: visibleFrame,
+            panelSize: panelSize,
+            pointerOffset: pointerOffset
+        )
+
+        XCTAssertEqual(origin, NSPoint(x: 100, y: 200))
+    }
+}
+
 @MainActor
 private final class FakePasteboard: PasteboardChangeCounting {
     var changeCount: Int
