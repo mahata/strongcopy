@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    name: Package, notarize, and release
+    name: Package and release
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
@@ -106,81 +106,19 @@ jobs:
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "number=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Import signing certificate
-        if: steps.version.outputs.should_release == 'true'
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-        run: |
-          KEYCHAIN_PATH="$RUNNER_TEMP/strongcopy-signing.keychain-db"
-          KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
-          printf '%s' "$MACOS_CERTIFICATE" | base64 -D > "$RUNNER_TEMP/certificate.p12"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import "$RUNNER_TEMP/certificate.p12" \
-            -P "$MACOS_CERTIFICATE_PASSWORD" \
-            -A \
-            -t cert \
-            -f pkcs12 \
-            -k "$KEYCHAIN_PATH"
-          security set-key-partition-list \
-            -S apple-tool:,apple: \
-            -k "$KEYCHAIN_PASSWORD" \
-            "$KEYCHAIN_PATH"
-          security list-keychains -d user -s "$KEYCHAIN_PATH"
-
-      - name: Package signed DMG
+      - name: Package DMG with ad-hoc-signed app
         if: steps.version.outputs.should_release == 'true'
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-          CODESIGN_IDENTITY: ${{ secrets.DEVELOPER_ID_APPLICATION }}
         run: scripts/package-macos.sh "${{ steps.version.outputs.number }}" artifacts
 
-      - name: Verify signed package
+      - name: Verify package
         if: steps.version.outputs.should_release == 'true'
         run: |
           scripts/verify-macos-package.sh \
             "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg" \
             "${{ steps.version.outputs.number }}" \
             "${{ github.run_number }}"
-
-      - name: Notarize and staple DMG
-        if: steps.version.outputs.should_release == 'true'
-        env:
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
-        run: |
-          API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
-          printf '%s' "$APPLE_API_KEY" | base64 -D > "$API_KEY_PATH"
-          xcrun notarytool submit \
-            "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg" \
-            --key "$API_KEY_PATH" \
-            --key-id "$APPLE_API_KEY_ID" \
-            --issuer "$APPLE_API_ISSUER_ID" \
-            --wait
-          xcrun stapler staple "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg"
-          (
-            cd artifacts
-            shasum -a 256 "Strongcopy-${{ steps.version.outputs.number }}.dmg" \
-              > "Strongcopy-${{ steps.version.outputs.number }}.dmg.sha256"
-          )
-
-      - name: Verify notarized package
-        if: steps.version.outputs.should_release == 'true'
-        env:
-          REQUIRE_NOTARIZATION: "1"
-        run: |
-          scripts/verify-macos-package.sh \
-            "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg" \
-            "${{ steps.version.outputs.number }}" \
-            "${{ github.run_number }}"
-          spctl --assess \
-            --type open \
-            --context context:primary-signature \
-            --verbose=2 \
-            "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg"
 
       - name: Publish GitHub Release
         if: steps.version.outputs.should_release == 'true'
@@ -203,9 +141,3 @@ jobs:
               --generate-notes \
               --title "Strongcopy $VERSION"
           fi
-
-      - name: Clean up signing material
-        if: always() && steps.version.outputs.should_release == 'true'
-        run: |
-          security delete-keychain "$RUNNER_TEMP/strongcopy-signing.keychain-db" || true
-          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP"/AuthKey_*.p8
