@@ -32,17 +32,19 @@ require Accessibility or notification permission.
 1. Download `Strongcopy-<version>.dmg` from the
    [latest GitHub Release](https://github.com/mahata/strongcopy/releases/latest).
 2. Open the DMG and drag **Strongcopy** to **Applications**.
-3. In Applications, Control-click **Strongcopy**, choose **Open**, then confirm
-   that you want to open it. If macOS does not offer that option, try opening
-   Strongcopy once, then use **System Settings > Privacy & Security > Open
-   Anyway**.
+3. Open Terminal and remove the quarantine attribute, then launch Strongcopy:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Strongcopy.app
+   open /Applications/Strongcopy.app
+   ```
 
 Release builds contain an ad-hoc-signed app in an unsigned, unnotarized DMG, so
-macOS Gatekeeper requires this manual approval the first time each downloaded
-build is opened. Strongcopy runs without a Dock icon; it adds a clipboard icon
-to the menu bar so you can confirm it is running. Click the menu bar icon and
-choose **Quit Strongcopy** to stop it, or **About Strongcopy** to see the
-version.
+macOS cannot verify them for malware. Only remove the quarantine attribute from
+a DMG downloaded from the official GitHub Releases page. Strongcopy runs without
+a Dock icon; it adds a clipboard icon to the menu bar so you can confirm it is
+running. Click the menu bar icon and choose **Quit Strongcopy** to stop it, or
+**About Strongcopy** to see the version.
 
 ### Building the App
 
