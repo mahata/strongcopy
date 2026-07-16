@@ -106,7 +106,7 @@ jobs:
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "number=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Package ad-hoc-signed DMG
+      - name: Package DMG with ad-hoc-signed app
         if: steps.version.outputs.should_release == 'true'
         env:
           BUILD_NUMBER: ${{ github.run_number }}

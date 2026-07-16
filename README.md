@@ -37,11 +37,12 @@ require Accessibility or notification permission.
    Strongcopy once, then use **System Settings > Privacy & Security > Open
    Anyway**.
 
-Release builds are ad-hoc signed and are not notarized by Apple, so macOS
-Gatekeeper requires this manual approval the first time each downloaded build
-is opened. Strongcopy runs without a Dock icon; it adds a clipboard icon to the
-menu bar so you can confirm it is running. Click the menu bar icon and choose
-**Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
+Release builds contain an ad-hoc-signed app in an unsigned, unnotarized DMG, so
+macOS Gatekeeper requires this manual approval the first time each downloaded
+build is opened. Strongcopy runs without a Dock icon; it adds a clipboard icon
+to the menu bar so you can confirm it is running. Click the menu bar icon and
+choose **Quit Strongcopy** to stop it, or **About Strongcopy** to see the
+version.
 
 ### Building the App
 
@@ -71,7 +72,8 @@ scripts/verify-macos-package.sh dist/Strongcopy-0.1.0.dmg 0.1.0 1
 ```
 
 The package contains native slices for both Apple Silicon and Intel Macs.
-Like published releases, local builds are ad-hoc signed and not notarized.
+Like published releases, local builds contain an ad-hoc-signed app in an
+unsigned, unnotarized DMG.
 
 ## Development
 
@@ -107,10 +109,10 @@ Or double-click `Package.swift` in Finder.
 
 ### Publishing a Release
 
-Every successful CI run caused by a push to `main` automatically packages and
-publishes an ad-hoc-signed, unnotarized universal DMG through GitHub Releases.
-Pull-request builds do not publish releases. No Apple Developer credentials are
-required, but users must manually approve the app in Gatekeeper.
+Every successful CI run caused by a push to `main` automatically publishes an
+unsigned, unnotarized universal DMG containing an ad-hoc-signed app through
+GitHub Releases. Pull-request builds do not publish releases. No Apple Developer
+credentials are required, but users must manually approve the app in Gatekeeper.
 
 The first automated release is `v0.1.0`. Each later release increments the
 patch component of the highest existing `vMAJOR.MINOR.PATCH` tag. A commit is
