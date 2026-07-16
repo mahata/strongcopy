@@ -50,17 +50,17 @@ jobs:
             )"
 
             if [[ -n "$EXISTING_TAG" ]]; then
-              if gh release view "$EXISTING_TAG" >/dev/null 2>&1; then
+              if RELEASE_DETAILS="$(
+                gh release view "$EXISTING_TAG" --json isDraft,assets 2>/dev/null
+              )"; then
                 VERSION="${EXISTING_TAG#v}"
-                IS_DRAFT="$(
-                  gh release view "$EXISTING_TAG" --json isDraft --jq '.isDraft'
-                )"
-                RELEASE_ASSETS="$(
-                  gh release view "$EXISTING_TAG" --json assets --jq '.assets[].name'
-                )"
-                if [[ "$IS_DRAFT" == "false" ]] &&
-                  grep -Fxq "Strongcopy-$VERSION.dmg" <<< "$RELEASE_ASSETS" &&
-                  grep -Fxq "Strongcopy-$VERSION.dmg.sha256" <<< "$RELEASE_ASSETS"; then
+                if jq -e \
+                  --arg dmg "Strongcopy-$VERSION.dmg" \
+                  --arg checksum "Strongcopy-$VERSION.dmg.sha256" \
+                  '.isDraft == false
+                    and ([.assets[].name] | index($dmg)) != null
+                    and ([.assets[].name] | index($checksum)) != null' \
+                  <<< "$RELEASE_DETAILS" >/dev/null; then
                   echo "Commit $RELEASE_SHA was already released as $EXISTING_TAG."
                   echo "should_release=false" >> "$GITHUB_OUTPUT"
                   exit 0
@@ -93,6 +93,7 @@ jobs:
             git tag -d "$RELEASE_TAG"
             if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
               echo "Version $RELEASE_TAG was reserved concurrently; retrying."
+              sleep 2
               continue
             fi
 

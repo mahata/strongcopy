@@ -124,9 +124,10 @@ Configure these GitHub Actions secrets before publishing the first release:
 | `APPLE_API_KEY_ID` | App Store Connect API key ID |
 | `APPLE_API_ISSUER_ID` | App Store Connect issuer ID |
 
-GitHub Actions must also have permission to write repository contents. The
-automatically generated tag sets the marketing version, while the GitHub
-Actions run number supplies the bundle build number.
+GitHub Actions must also have permission to write repository contents. Under
+**Settings > Actions > General > Workflow permissions**, select **Read and write
+permissions**. The automatically generated tag sets the marketing version,
+while the GitHub Actions run number supplies the bundle build number.
 
 ### Current scope
 
