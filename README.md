@@ -104,13 +104,14 @@ Or double-click `Package.swift` in Finder.
 
 ### Publishing a Release
 
-Pushing a semantic version tag packages, signs, notarizes, and publishes a
-universal DMG:
+Every successful CI run caused by a push to `main` automatically packages,
+signs, notarizes, and publishes a universal DMG through GitHub Releases.
+Pull-request builds do not publish releases.
 
-```bash
-git tag v1.2.3
-git push origin v1.2.3
-```
+The first automated release is `v0.1.0`. Each later release increments the
+patch component of the highest existing `vMAJOR.MINOR.PATCH` tag. A commit is
+released at most once, so rerunning CI for an already released commit does not
+create another version.
 
 Configure these GitHub Actions secrets before publishing the first release:
 
@@ -123,9 +124,10 @@ Configure these GitHub Actions secrets before publishing the first release:
 | `APPLE_API_KEY_ID` | App Store Connect API key ID |
 | `APPLE_API_ISSUER_ID` | App Store Connect issuer ID |
 
-The release workflow accepts tags only in `vMAJOR.MINOR.PATCH` form. The tag
-sets the marketing version, while the GitHub Actions run number supplies the
-bundle build number.
+GitHub Actions must also have permission to write repository contents. Under
+**Settings > Actions > General > Workflow permissions**, select **Read and write
+permissions**. The automatically generated tag sets the marketing version,
+while the GitHub Actions run number supplies the bundle build number.
 
 ### Current scope
 

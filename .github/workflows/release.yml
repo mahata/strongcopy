@@ -1,42 +1,113 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event.workflow_run.head_sha }}
   cancel-in-progress: false
 
 jobs:
   release:
     name: Package, notarize, and release
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
 
-      - name: Validate tag
+      - name: Reserve patch version
         id: version
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag must use vMAJOR.MINOR.PATCH format: $RELEASE_TAG" >&2
+          set -euo pipefail
+
+          while true; do
+            git fetch --force --tags origin
+
+            EXISTING_TAG="$(
+              git tag --points-at "$RELEASE_SHA" --sort=-version:refname |
+                awk '/^v[0-9]+\.[0-9]+\.[0-9]+$/ && !found { print; found=1 }'
+            )"
+
+            if [[ -n "$EXISTING_TAG" ]]; then
+              if RELEASE_DETAILS="$(
+                gh release view "$EXISTING_TAG" --json isDraft,assets 2>/dev/null
+              )"; then
+                VERSION="${EXISTING_TAG#v}"
+                if jq -e \
+                  --arg dmg "Strongcopy-$VERSION.dmg" \
+                  --arg checksum "Strongcopy-$VERSION.dmg.sha256" \
+                  '.isDraft == false
+                    and ([.assets[].name] | index($dmg)) != null
+                    and ([.assets[].name] | index($checksum)) != null' \
+                  <<< "$RELEASE_DETAILS" >/dev/null; then
+                  echo "Commit $RELEASE_SHA was already released as $EXISTING_TAG."
+                  echo "should_release=false" >> "$GITHUB_OUTPUT"
+                  exit 0
+                fi
+
+                echo "Release $EXISTING_TAG is incomplete or still a draft; rebuilding it."
+              fi
+
+              RELEASE_TAG="$EXISTING_TAG"
+              break
+            fi
+
+            LATEST_TAG="$(
+              git tag --list 'v*' --sort=-version:refname |
+                awk '/^v[0-9]+\.[0-9]+\.[0-9]+$/ && !found { print; found=1 }'
+            )"
+
+            if [[ -z "$LATEST_TAG" ]]; then
+              RELEASE_TAG="v0.1.0"
+            else
+              IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST_TAG#v}"
+              RELEASE_TAG="v$MAJOR.$MINOR.$((PATCH + 1))"
+            fi
+
+            git tag "$RELEASE_TAG" "$RELEASE_SHA"
+            if git push origin "refs/tags/$RELEASE_TAG"; then
+              break
+            fi
+
+            git tag -d "$RELEASE_TAG"
+            if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
+              echo "Version $RELEASE_TAG was reserved concurrently; retrying."
+              sleep 2
+              continue
+            fi
+
+            echo "Failed to reserve $RELEASE_TAG and no matching remote tag exists." >&2
             exit 1
-          fi
+          done
+
+          echo "Reserved $RELEASE_TAG for $RELEASE_SHA."
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "number=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
 
       - name: Import signing certificate
+        if: steps.version.outputs.should_release == 'true'
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -60,12 +131,14 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH"
 
       - name: Package signed DMG
+        if: steps.version.outputs.should_release == 'true'
         env:
           BUILD_NUMBER: ${{ github.run_number }}
           CODESIGN_IDENTITY: ${{ secrets.DEVELOPER_ID_APPLICATION }}
         run: scripts/package-macos.sh "${{ steps.version.outputs.number }}" artifacts
 
       - name: Verify signed package
+        if: steps.version.outputs.should_release == 'true'
         run: |
           scripts/verify-macos-package.sh \
             "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg" \
@@ -73,6 +146,7 @@ jobs:
             "${{ github.run_number }}"
 
       - name: Notarize and staple DMG
+        if: steps.version.outputs.should_release == 'true'
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -94,6 +168,7 @@ jobs:
           )
 
       - name: Verify notarized package
+        if: steps.version.outputs.should_release == 'true'
         env:
           REQUIRE_NOTARIZATION: "1"
         run: |
@@ -108,9 +183,10 @@ jobs:
             "artifacts/Strongcopy-${{ steps.version.outputs.number }}.dmg"
 
       - name: Publish GitHub Release
+        if: steps.version.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
           VERSION: ${{ steps.version.outputs.number }}
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
@@ -118,6 +194,7 @@ jobs:
               "artifacts/Strongcopy-$VERSION.dmg" \
               "artifacts/Strongcopy-$VERSION.dmg.sha256" \
               --clobber
+            gh release edit "$RELEASE_TAG" --draft=false
           else
             gh release create "$RELEASE_TAG" \
               "artifacts/Strongcopy-$VERSION.dmg" \
@@ -128,7 +205,7 @@ jobs:
           fi
 
       - name: Clean up signing material
-        if: always()
+        if: always() && steps.version.outputs.should_release == 'true'
         run: |
           security delete-keychain "$RUNNER_TEMP/strongcopy-signing.keychain-db" || true
           rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP"/AuthKey_*.p8
