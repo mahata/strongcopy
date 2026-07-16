@@ -32,11 +32,14 @@ require Accessibility or notification permission.
 1. Download `Strongcopy-<version>.dmg` from the
    [latest GitHub Release](https://github.com/mahata/strongcopy/releases/latest).
 2. Open the DMG and drag **Strongcopy** to **Applications**.
-3. Open Strongcopy from Applications.
+3. In Applications, Control-click **Strongcopy**, choose **Open**, then confirm
+   that you want to open it. If macOS does not offer that option, try opening
+   Strongcopy once, then use **System Settings > Privacy & Security > Open
+   Anyway**.
 
-Release builds are signed with a Developer ID certificate and notarized by
-Apple, so macOS Gatekeeper can verify them without requiring a security
-override. Strongcopy runs without a Dock icon; it adds a clipboard icon to the
+Release builds are ad-hoc signed and are not notarized by Apple, so macOS
+Gatekeeper requires this manual approval the first time each downloaded build
+is opened. Strongcopy runs without a Dock icon; it adds a clipboard icon to the
 menu bar so you can confirm it is running. Click the menu bar icon and choose
 **Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
 
@@ -68,7 +71,7 @@ scripts/verify-macos-package.sh dist/Strongcopy-0.1.0.dmg 0.1.0 1
 ```
 
 The package contains native slices for both Apple Silicon and Intel Macs.
-Ad-hoc local builds are not notarized and are intended only for development.
+Like published releases, local builds are ad-hoc signed and not notarized.
 
 ## Development
 
@@ -104,25 +107,15 @@ Or double-click `Package.swift` in Finder.
 
 ### Publishing a Release
 
-Every successful CI run caused by a push to `main` automatically packages,
-signs, notarizes, and publishes a universal DMG through GitHub Releases.
-Pull-request builds do not publish releases.
+Every successful CI run caused by a push to `main` automatically packages and
+publishes an ad-hoc-signed, unnotarized universal DMG through GitHub Releases.
+Pull-request builds do not publish releases. No Apple Developer credentials are
+required, but users must manually approve the app in Gatekeeper.
 
 The first automated release is `v0.1.0`. Each later release increments the
 patch component of the highest existing `vMAJOR.MINOR.PATCH` tag. A commit is
 released at most once, so rerunning CI for an already released commit does not
 create another version.
-
-Configure these GitHub Actions secrets before publishing the first release:
-
-| Secret | Value |
-| --- | --- |
-| `MACOS_CERTIFICATE` | Base64-encoded Developer ID Application `.p12` |
-| `MACOS_CERTIFICATE_PASSWORD` | Password for the `.p12` |
-| `DEVELOPER_ID_APPLICATION` | Full `Developer ID Application: ...` certificate identity |
-| `APPLE_API_KEY` | Base64-encoded App Store Connect API `.p8` key |
-| `APPLE_API_KEY_ID` | App Store Connect API key ID |
-| `APPLE_API_ISSUER_ID` | App Store Connect issuer ID |
 
 GitHub Actions must also have permission to write repository contents. Under
 **Settings > Actions > General > Workflow permissions**, select **Read and write
