@@ -95,9 +95,9 @@ fi
 # The mounted volume advertises its custom icon through the kHasCustomIcon bit
 # of the Finder flags, which live in bytes 8-9 of the 32-byte Finder info.
 readonly VOLUME_FINDER_INFO="$(xattr -px com.apple.FinderInfo "$MOUNT_POINT" 2>/dev/null | tr -d ' \n')"
-readonly VOLUME_FINDER_FLAGS="${VOLUME_FINDER_INFO:16:2}"
+readonly VOLUME_FINDER_FLAGS="${VOLUME_FINDER_INFO:16:4}"
 
-if [[ -z "$VOLUME_FINDER_FLAGS" || $((16#$VOLUME_FINDER_FLAGS & 0x04)) -eq 0 ]]; then
+if [[ -z "$VOLUME_FINDER_FLAGS" || $((16#$VOLUME_FINDER_FLAGS & 0x0400)) -eq 0 ]]; then
     echo "DMG volume does not have the custom icon flag set" >&2
     exit 1
 fi

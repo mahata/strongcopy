@@ -118,9 +118,10 @@ Strongcopy/
 The app icon is drawn in code rather than stored as a binary asset.
 `scripts/generate-app-icon.swift` renders a stack of two copied cards carrying a
 checkmark — the confirmation Strongcopy exists to provide — onto the standard
-macOS squircle, using CoreGraphics only. Every size in the icon set is drawn as
-vectors at its native resolution, with heavier artwork at 16 and 32 pixels so
-the checkmark stays legible.
+macOS squircle. It draws with CoreGraphics and writes the PNGs with ImageIO, so
+it needs no framework beyond the system ones. Every size in the icon set is
+drawn as vectors at its native resolution, with heavier artwork at 16 and 32
+pixels so the checkmark stays legible.
 
 `scripts/package-macos.sh` runs the generator during packaging, writing
 `Contents/Resources/AppIcon.icns` into the bundle before it is signed and

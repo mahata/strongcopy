@@ -3,16 +3,16 @@
 set -euo pipefail
 
 readonly EXPECTED_MEMBERS=(
-    "icon_16x16.png"
-    "icon_16x16@2x.png"
-    "icon_32x32.png"
-    "icon_32x32@2x.png"
-    "icon_128x128.png"
-    "icon_128x128@2x.png"
-    "icon_256x256.png"
-    "icon_256x256@2x.png"
-    "icon_512x512.png"
-    "icon_512x512@2x.png"
+    "icon_16x16.png:16"
+    "icon_16x16@2x.png:32"
+    "icon_32x32.png:32"
+    "icon_32x32@2x.png:64"
+    "icon_128x128.png:128"
+    "icon_128x128@2x.png:256"
+    "icon_256x256.png:256"
+    "icon_256x256@2x.png:512"
+    "icon_512x512.png:512"
+    "icon_512x512@2x.png:1024"
 )
 
 usage() {
@@ -42,8 +42,8 @@ readonly ICONSET_DIRECTORY="$WORK_DIRECTORY/AppIcon.iconset"
 iconutil --convert iconset --output "$ICONSET_DIRECTORY" "$ICNS_PATH"
 
 for member in "${EXPECTED_MEMBERS[@]}"; do
-    if [[ ! -f "$ICONSET_DIRECTORY/$member" ]]; then
-        echo "Icon is missing $member" >&2
+    if [[ ! -f "$ICONSET_DIRECTORY/${member%%:*}" ]]; then
+        echo "Icon is missing ${member%%:*}" >&2
         exit 1
     fi
 done
@@ -62,7 +62,8 @@ assert_pixel_size() {
     fi
 }
 
-assert_pixel_size "icon_16x16.png" 16
-assert_pixel_size "icon_512x512@2x.png" 1024
+for member in "${EXPECTED_MEMBERS[@]}"; do
+    assert_pixel_size "${member%%:*}" "${member##*:}"
+done
 
 echo "Verified $ICNS_PATH"
