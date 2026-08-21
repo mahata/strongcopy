@@ -1,3 +1,4 @@
+import Security
 import XCTest
 @testable import Strongcopy
 
@@ -678,7 +679,34 @@ final class CodeSignatureIdentityTests: XCTestCase {
 
         XCTAssertEqual(
             identity?.requirementText,
-            #"anchor apple generic and identifier "org.mahata.strongcopy" and certificate leaf[subject.OU] = "ABCDE12345""#
+            #"anchor apple generic and identifier "org.mahata.strongcopy""#
+                + #" and certificate 1[field.1.2.840.113635.100.6.2.6]"#
+                + #" and certificate leaf[field.1.2.840.113635.100.6.1.13]"#
+                + #" and certificate leaf[subject.OU] = "ABCDE12345""#
+        )
+    }
+
+    // The Team ID appears in the subject OU of every certificate class Apple
+    // issues to a team, so pinning on it alone would also accept a build signed
+    // with an Apple Development certificate.
+    func testRequirementIsNarrowedToDeveloperIDCertificates() throws {
+        let identity = try XCTUnwrap(
+            CodeSignatureIdentity(bundleIdentifier: "org.mahata.strongcopy", teamIdentifier: "ABCDE12345")
+        )
+
+        XCTAssertTrue(identity.requirementText.contains("field.1.2.840.113635.100.6.2.6"))
+        XCTAssertTrue(identity.requirementText.contains("field.1.2.840.113635.100.6.1.13"))
+    }
+
+    func testRequirementIsAcceptedByTheSecurityFramework() throws {
+        let identity = try XCTUnwrap(
+            CodeSignatureIdentity(bundleIdentifier: "org.mahata.strongcopy", teamIdentifier: "ABCDE12345")
+        )
+
+        var requirement: SecRequirement?
+        XCTAssertEqual(
+            SecRequirementCreateWithString(identity.requirementText as CFString, [], &requirement),
+            errSecSuccess
         )
     }
 

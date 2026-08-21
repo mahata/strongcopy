@@ -62,9 +62,17 @@ struct CodeSignatureIdentity: Equatable, Sendable {
         self.teamIdentifier = teamIdentifier
     }
 
+    /// Pinned to Developer ID Application certificates specifically. `subject.OU`
+    /// alone is the Team ID on every certificate class Apple issues to a team,
+    /// including the far more numerous Apple Development ones, so the two marker
+    /// extensions below narrow this to the single certificate class that signs
+    /// releases: `6.2.6` is the Developer ID intermediate and `6.1.13` is the
+    /// Developer ID Application leaf.
     var requirementText: String {
         "anchor apple generic"
             + " and identifier \"\(bundleIdentifier)\""
+            + " and certificate 1[field.1.2.840.113635.100.6.2.6]"
+            + " and certificate leaf[field.1.2.840.113635.100.6.1.13]"
             + " and certificate leaf[subject.OU] = \"\(teamIdentifier)\""
     }
 
@@ -310,15 +318,9 @@ final class DiskImageUpdateInstaller: UpdateInstalling {
             throw UpdateInstallError.missingBundle
         }
 
-        // Copying out of a mounted image leaves no quarantine attribute, so
-        // Gatekeeper will not re-examine the replacement at its next launch. The
-        // checksum only proves the download arrived intact; this is the check
-        // that proves it came from us.
+        // Fail before copying several megabytes out of an image that was never
+        // going to be trusted.
         try CodeSignatureInspector.validate(bundleAt: candidateURL, matching: identity.requirementText)
-
-        guard BundleVersionReader.version(atBundleURL: candidateURL) == update.version else {
-            throw UpdateInstallError.versionMismatch(expected: update.version.description)
-        }
 
         let stagedURL = workspace.appendingPathComponent(installedBundleURL.lastPathComponent)
         guard try Command.run("/usr/bin/ditto", [candidateURL.path, stagedURL.path]) == 0 else {
@@ -326,6 +328,18 @@ final class DiskImageUpdateInstaller: UpdateInstalling {
         }
 
         mount.detach()
+
+        // The staged copy, not the disk image, is what becomes the installed app,
+        // so it is what has to satisfy the requirement. Copying out of a mounted
+        // image leaves no quarantine attribute, so Gatekeeper will not re-examine
+        // the replacement at its next launch and this is the last chance to
+        // reject it. The checksum only proves the download arrived intact; this
+        // is the check that proves it came from us.
+        try CodeSignatureInspector.validate(bundleAt: stagedURL, matching: identity.requirementText)
+
+        guard BundleVersionReader.version(atBundleURL: stagedURL) == update.version else {
+            throw UpdateInstallError.versionMismatch(expected: update.version.description)
+        }
 
         do {
             _ = try FileManager.default.replaceItemAt(installedBundleURL, withItemAt: stagedURL)
@@ -382,16 +396,21 @@ private final class DiskImageMount {
         guard isAttached else {
             return
         }
-        isAttached = false
 
+        // The flag is only cleared once a detach actually succeeds, so a failure
+        // here leaves the deferred safety-net call able to try again. Detaching
+        // straight after a large read tends to report the volume as busy.
         for _ in 0..<3 {
             if (try? Command.run("/usr/bin/hdiutil", ["detach", mountPoint.path, "-quiet"])) == 0 {
+                isAttached = false
                 return
             }
             Thread.sleep(forTimeInterval: 1)
         }
 
-        _ = try? Command.run("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force", "-quiet"])
+        if (try? Command.run("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force", "-quiet"])) == 0 {
+            isAttached = false
+        }
     }
 }
 
