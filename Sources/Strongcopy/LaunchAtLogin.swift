@@ -109,17 +109,16 @@ final class LaunchAtLoginController {
             } catch {
                 return .failed(error.localizedDescription)
             }
-            return .disabled
         case .disabled:
             do {
                 try loginItem.register()
             } catch {
                 return .failed(error.localizedDescription)
             }
-            // register() reports success even when it cannot take effect, so the
-            // resulting state is the only trustworthy signal.
-            return outcome(for: loginItem.state)
         }
+        // register() and unregister() report success even when they cannot take
+        // effect, so the resulting state is the only trustworthy signal.
+        return outcome(for: loginItem.state)
     }
 
     func openSystemSettings() {

@@ -177,7 +177,7 @@ final class LaunchAtLoginControllerTests: XCTestCase {
     }
 
     func testTogglingEnabledItemUnregistersAndReportsDisabled() {
-        let loginItem = FakeLoginItem(state: .enabled)
+        let loginItem = FakeLoginItem(state: .enabled, stateAfterUnregister: .disabled)
         let controller = LaunchAtLoginController(loginItem: loginItem)
 
         XCTAssertEqual(controller.toggle(), .disabled)
@@ -191,6 +191,14 @@ final class LaunchAtLoginControllerTests: XCTestCase {
 
         XCTAssertEqual(controller.toggle(), .disabled)
         XCTAssertEqual(loginItem.registerCount, 1)
+    }
+
+    func testSilentUnregistrationFailureReportsActualStateInsteadOfDisabled() {
+        let loginItem = FakeLoginItem(state: .enabled, stateAfterUnregister: .enabled)
+        let controller = LaunchAtLoginController(loginItem: loginItem)
+
+        XCTAssertEqual(controller.toggle(), .enabled)
+        XCTAssertEqual(loginItem.unregisterCount, 1)
     }
 
     func testRegistrationLeftAwaitingApprovalReportsRequiresApproval() {
@@ -325,15 +333,21 @@ private enum FakeLoginItemError: Error, LocalizedError {
 private final class FakeLoginItem: LoginItemRegistering {
     private(set) var state: LaunchAtLoginState
     private let stateAfterRegister: LaunchAtLoginState?
+    private let stateAfterUnregister: LaunchAtLoginState?
     private(set) var registerCount = 0
     private(set) var unregisterCount = 0
     private(set) var openSystemSettingsCount = 0
     var registerError: Error?
     var unregisterError: Error?
 
-    init(state: LaunchAtLoginState, stateAfterRegister: LaunchAtLoginState? = nil) {
+    init(
+        state: LaunchAtLoginState,
+        stateAfterRegister: LaunchAtLoginState? = nil,
+        stateAfterUnregister: LaunchAtLoginState? = nil
+    ) {
         self.state = state
         self.stateAfterRegister = stateAfterRegister
+        self.stateAfterUnregister = stateAfterUnregister
     }
 
     func register() throws {
@@ -351,7 +365,9 @@ private final class FakeLoginItem: LoginItemRegistering {
         if let unregisterError {
             throw unregisterError
         }
-        state = .disabled
+        if let stateAfterUnregister {
+            state = stateAfterUnregister
+        }
     }
 
     func openSystemSettings() {
