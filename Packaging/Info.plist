@@ -8,6 +8,8 @@
 	<string>Strongcopy</string>
 	<key>CFBundleExecutable</key>
 	<string>Strongcopy</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.mahata.strongcopy</string>
 	<key>CFBundleInfoDictionaryVersion</key>

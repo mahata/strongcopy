@@ -113,6 +113,28 @@ Strongcopy/
         └── StrongcopyTests.swift  # Unit tests
 ```
 
+### App Icon
+
+The app icon is drawn in code rather than stored as a binary asset.
+`scripts/generate-app-icon.swift` renders a stack of two copied cards carrying a
+checkmark — the confirmation Strongcopy exists to provide — onto the standard
+macOS squircle. It draws with CoreGraphics and writes the PNGs with ImageIO, so
+it needs no framework beyond the system ones. Every size in the icon set is
+drawn as vectors at its native resolution, with heavier artwork at 16 and 32
+pixels so the checkmark stays legible.
+
+`scripts/package-macos.sh` runs the generator during packaging, writing
+`Contents/Resources/AppIcon.icns` into the bundle before it is signed and
+reusing the same file as the DMG volume icon. To render and inspect the icon on
+its own:
+
+```bash
+swift scripts/generate-app-icon.swift /tmp/AppIcon.icns
+scripts/verify-app-icon.sh /tmp/AppIcon.icns
+iconutil --convert iconset --output /tmp/AppIcon.iconset /tmp/AppIcon.icns
+open /tmp/AppIcon.iconset
+```
+
 ### Opening in Xcode
 
 On macOS, you can open this project in Xcode:
@@ -152,9 +174,9 @@ while the GitHub Actions run number supplies the bundle build number.
 
 ### Current scope
 
-The initial milestone uses fixed polling and display durations. Preferences,
-sounds, and a branded app icon are not implemented yet. Global Command-C event
-capture is also out of scope.
+The initial milestone uses fixed polling and display durations. Preferences and
+sounds are not implemented yet. Global Command-C event capture is also out of
+scope.
 
 ## License
 
