@@ -15,6 +15,7 @@ if [[ $# -ne 3 ]]; then
     exit 64
 fi
 
+readonly SCRIPT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly DMG_PATH="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 readonly EXPECTED_VERSION="$2"
 readonly EXPECTED_BUILD_NUMBER="$3"
@@ -56,6 +57,8 @@ ATTACHED=1
 readonly APP_BUNDLE="$MOUNT_POINT/$APP_NAME.app"
 readonly INFO_PLIST="$APP_BUNDLE/Contents/Info.plist"
 readonly APP_EXECUTABLE="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+readonly APP_ICON="$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+readonly VOLUME_ICON="$MOUNT_POINT/.VolumeIcon.icns"
 
 if [[ ! -L "$MOUNT_POINT/Applications" || "$(readlink "$MOUNT_POINT/Applications")" != "/Applications" ]]; then
     echo "DMG does not contain an Applications shortcut" >&2
@@ -80,6 +83,24 @@ assert_plist_value CFBundleVersion "$EXPECTED_BUILD_NUMBER"
 assert_plist_value CFBundlePackageType APPL
 assert_plist_value LSMinimumSystemVersion 13.0
 assert_plist_value LSUIElement true
+assert_plist_value CFBundleIconFile AppIcon
+
+"$SCRIPT_DIRECTORY/verify-app-icon.sh" "$APP_ICON"
+
+if ! cmp -s "$APP_ICON" "$VOLUME_ICON"; then
+    echo "DMG volume icon does not match the app icon" >&2
+    exit 1
+fi
+
+# The mounted volume advertises its custom icon through the kHasCustomIcon bit
+# of the Finder flags, which live in bytes 8-9 of the 32-byte Finder info.
+readonly VOLUME_FINDER_INFO="$(xattr -px com.apple.FinderInfo "$MOUNT_POINT" 2>/dev/null | tr -d ' \n')"
+readonly VOLUME_FINDER_FLAGS="${VOLUME_FINDER_INFO:16:2}"
+
+if [[ -z "$VOLUME_FINDER_FLAGS" || $((16#$VOLUME_FINDER_FLAGS & 0x04)) -eq 0 ]]; then
+    echo "DMG volume does not have the custom icon flag set" >&2
+    exit 1
+fi
 
 readonly ARCHITECTURES="$(lipo -archs "$APP_EXECUTABLE")"
 for architecture in arm64 x86_64; do

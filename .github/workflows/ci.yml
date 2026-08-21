@@ -42,3 +42,10 @@ jobs:
 
       - name: Test
         run: swift test
+
+      # Packaging only runs in the release workflow, so the icon is generated and
+      # checked here to catch regressions on pull requests instead of at release.
+      - name: Verify app icon
+        run: |
+          swift scripts/generate-app-icon.swift "$RUNNER_TEMP/AppIcon.icns"
+          scripts/verify-app-icon.sh "$RUNNER_TEMP/AppIcon.icns"
