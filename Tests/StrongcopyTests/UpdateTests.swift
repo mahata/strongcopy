@@ -668,3 +668,346 @@ private final class RecordedCancellation: Cancellation {
         isCancelled = true
     }
 }
+
+final class CodeSignatureIdentityTests: XCTestCase {
+    func testBuildsARequirementPinnedToTheBundleAndTeam() {
+        let identity = CodeSignatureIdentity(
+            bundleIdentifier: "org.mahata.strongcopy",
+            teamIdentifier: "ABCDE12345"
+        )
+
+        XCTAssertEqual(
+            identity?.requirementText,
+            #"anchor apple generic and identifier "org.mahata.strongcopy" and certificate leaf[subject.OU] = "ABCDE12345""#
+        )
+    }
+
+    // The requirement is a parsed language, so a value that could close a quoted
+    // string is refused outright rather than escaped into it.
+    func testRejectsIdentifiersThatCouldEscapeTheRequirement() {
+        for bundleIdentifier in [#"org.mahata" or anchor apple"#, "org mahata", "org.mahata\"", ""] {
+            XCTAssertNil(
+                CodeSignatureIdentity(bundleIdentifier: bundleIdentifier, teamIdentifier: "ABCDE12345"),
+                "Expected \(bundleIdentifier) to be rejected"
+            )
+        }
+
+        for teamIdentifier in [#"A" or anchor apple"#, "ABCDE 12345", ""] {
+            XCTAssertNil(
+                CodeSignatureIdentity(bundleIdentifier: "org.mahata.strongcopy", teamIdentifier: teamIdentifier),
+                "Expected \(teamIdentifier) to be rejected"
+            )
+        }
+    }
+}
+
+final class CodeSignatureInspectorTests: XCTestCase {
+    private let systemBundle = URL(fileURLWithPath: "/System/Applications/Calculator.app")
+
+    func testAcceptsABundleThatSatisfiesTheRequirement() throws {
+        try CodeSignatureInspector.validate(
+            bundleAt: systemBundle,
+            matching: #"identifier "com.apple.calculator""#
+        )
+    }
+
+    func testRejectsABundleSignedForAnotherIdentifier() {
+        XCTAssertThrowsError(
+            try CodeSignatureInspector.validate(
+                bundleAt: systemBundle,
+                matching: #"identifier "com.apple.finder""#
+            )
+        ) { error in
+            XCTAssertEqual(error as? UpdateInstallError, .untrustedBundle)
+        }
+    }
+
+    // An unrelated Developer ID pin must fail even though the bundle itself is
+    // perfectly signed by Apple.
+    func testRejectsABundleFromAnotherTeam() throws {
+        let identity = try XCTUnwrap(
+            CodeSignatureIdentity(bundleIdentifier: "com.apple.calculator", teamIdentifier: "ABCDE12345")
+        )
+
+        XCTAssertThrowsError(
+            try CodeSignatureInspector.validate(bundleAt: systemBundle, matching: identity.requirementText)
+        )
+    }
+
+    func testRejectsAMissingBundle() {
+        XCTAssertThrowsError(
+            try CodeSignatureInspector.validate(
+                bundleAt: URL(fileURLWithPath: "/nonexistent/Strongcopy.app"),
+                matching: #"identifier "org.mahata.strongcopy""#
+            )
+        )
+    }
+
+    func testRejectsAnUnparsableRequirement() {
+        XCTAssertThrowsError(
+            try CodeSignatureInspector.validate(bundleAt: systemBundle, matching: "not a requirement (")
+        )
+    }
+}
+
+final class ChecksumFileTests: XCTestCase {
+    func testReadsTheDigestForTheNamedFile() throws {
+        let digest = String(repeating: "a", count: 64)
+
+        XCTAssertEqual(
+            try ChecksumFile.digest(from: "\(digest)  Strongcopy-1.0.0.dmg\n", forFileNamed: "Strongcopy-1.0.0.dmg"),
+            digest
+        )
+    }
+
+    func testNormalisesDigestCase() throws {
+        let digest = String(repeating: "A", count: 64)
+
+        XCTAssertEqual(
+            try ChecksumFile.digest(from: "\(digest)  Strongcopy-1.0.0.dmg", forFileNamed: "Strongcopy-1.0.0.dmg"),
+            digest.lowercased()
+        )
+    }
+
+    func testPicksTheLineMatchingTheRequestedFile() throws {
+        let other = String(repeating: "b", count: 64)
+        let wanted = String(repeating: "c", count: 64)
+        let text = "\(other)  Strongcopy-0.9.0.dmg\n\(wanted)  Strongcopy-1.0.0.dmg\n"
+
+        XCTAssertEqual(try ChecksumFile.digest(from: text, forFileNamed: "Strongcopy-1.0.0.dmg"), wanted)
+    }
+
+    func testToleratesTheBinaryModeMarker() throws {
+        let digest = String(repeating: "d", count: 64)
+
+        XCTAssertEqual(
+            try ChecksumFile.digest(from: "\(digest) *Strongcopy-1.0.0.dmg", forFileNamed: "Strongcopy-1.0.0.dmg"),
+            digest
+        )
+    }
+
+    func testRejectsAChecksumForAnotherFile() {
+        let digest = String(repeating: "a", count: 64)
+
+        XCTAssertThrowsError(
+            try ChecksumFile.digest(from: "\(digest)  Elsewhere.dmg", forFileNamed: "Strongcopy-1.0.0.dmg")
+        ) { error in
+            XCTAssertEqual(error as? UpdateInstallError, .malformedChecksum)
+        }
+    }
+
+    func testRejectsMalformedDigests() {
+        for text in [
+            "  Strongcopy-1.0.0.dmg",
+            "abc  Strongcopy-1.0.0.dmg",
+            "\(String(repeating: "z", count: 64))  Strongcopy-1.0.0.dmg",
+            "",
+        ] {
+            XCTAssertThrowsError(
+                try ChecksumFile.digest(from: text, forFileNamed: "Strongcopy-1.0.0.dmg"),
+                "Expected \(text) to be rejected"
+            )
+        }
+    }
+}
+
+final class FileDigestTests: XCTestCase {
+    func testHashesFileContents() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("strongcopy-digest-\(UUID().uuidString)")
+        try Data("hello".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertEqual(
+            try FileDigest.sha256Hex(ofFileAt: url),
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        )
+    }
+
+    func testHashesContentLargerThanOneChunk() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("strongcopy-digest-\(UUID().uuidString)")
+        try Data(repeating: 0x61, count: 3 * 1024 * 1024).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        XCTAssertEqual(try FileDigest.sha256Hex(ofFileAt: url).count, 64)
+    }
+
+    func testReportsAMissingFile() {
+        XCTAssertThrowsError(
+            try FileDigest.sha256Hex(ofFileAt: URL(fileURLWithPath: "/nonexistent/file"))
+        )
+    }
+}
+
+final class BundleVersionReaderTests: XCTestCase {
+    private func makeBundle(version: String?) throws -> URL {
+        let bundleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("strongcopy-\(UUID().uuidString)")
+            .appendingPathComponent("Strongcopy.app")
+        let contents = bundleURL.appendingPathComponent("Contents")
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+
+        var plist: [String: Any] = ["CFBundleName": "Strongcopy"]
+        if let version {
+            plist["CFBundleShortVersionString"] = version
+        }
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: contents.appendingPathComponent("Info.plist"))
+        return bundleURL
+    }
+
+    func testReadsTheMarketingVersion() throws {
+        let bundleURL = try makeBundle(version: "2.3.4")
+        defer { try? FileManager.default.removeItem(at: bundleURL.deletingLastPathComponent()) }
+
+        XCTAssertEqual(BundleVersionReader.version(atBundleURL: bundleURL), AppVersion("2.3.4"))
+    }
+
+    func testReportsNothingWhenTheVersionIsMissing() throws {
+        let bundleURL = try makeBundle(version: nil)
+        defer { try? FileManager.default.removeItem(at: bundleURL.deletingLastPathComponent()) }
+
+        XCTAssertNil(BundleVersionReader.version(atBundleURL: bundleURL))
+    }
+
+    func testReportsNothingWhenThereIsNoBundle() {
+        XCTAssertNil(
+            BundleVersionReader.version(atBundleURL: URL(fileURLWithPath: "/nonexistent/Strongcopy.app"))
+        )
+    }
+}
+
+final class RelaunchCommandTests: XCTestCase {
+    func testWaitsForTheCurrentProcessBeforeOpeningTheReplacement() {
+        let script = RelaunchCommand.script(
+            processIdentifier: 4321,
+            bundlePath: "/Applications/Strongcopy.app"
+        )
+
+        XCTAssertTrue(script.contains("4321"))
+        XCTAssertTrue(script.contains("'/Applications/Strongcopy.app'"))
+    }
+
+    func testQuotesPathsContainingShellMetacharacters() {
+        let script = RelaunchCommand.script(
+            processIdentifier: 1,
+            bundlePath: "/Users/me/Apps; rm -rf ~/Strongcopy.app"
+        )
+
+        XCTAssertTrue(script.contains("'/Users/me/Apps; rm -rf ~/Strongcopy.app'"))
+    }
+}
+
+final class ShellQuotingTests: XCTestCase {
+    func testWrapsPlainValuesInSingleQuotes() {
+        XCTAssertEqual(
+            ShellQuoting.singleQuoted("/Applications/Strongcopy.app"),
+            "'/Applications/Strongcopy.app'"
+        )
+    }
+
+    func testClosesAndReopensQuotingAroundEmbeddedQuotes() {
+        XCTAssertEqual(
+            ShellQuoting.singleQuoted("/Users/o'brien/Strongcopy.app"),
+            "'/Users/o'\\''brien/Strongcopy.app'"
+        )
+    }
+}
+
+@MainActor
+final class UpdateControllerProductionWiringTests: XCTestCase {
+    // The test runner is not an app bundle, which is the same situation a
+    // `swift run` build is in.
+    func testControllerBuiltFromADevelopmentBuildReportsUpdatingAsUnavailable() {
+        let controller = UpdateController(bundle: .main, scheduler: TimerScheduler())
+
+        XCTAssertEqual(controller.activity, .unavailable)
+        XCTAssertFalse(controller.shouldCheckOnSchedule())
+    }
+}
+
+final class UpdateMenuPresentationTests: XCTestCase {
+    func testIdleStateInvitesAcheck() {
+        let appearance = UpdateMenuPresentation.checkAppearance(for: .idle)
+
+        XCTAssertEqual(appearance.title, "Check for Updates…")
+        XCTAssertTrue(appearance.isEnabled)
+        XCTAssertNil(appearance.toolTip)
+    }
+
+    func testWorkInProgressIsShownInTheTitleAndCannotBeRestarted() {
+        let checking = UpdateMenuPresentation.checkAppearance(for: .checking)
+        XCTAssertEqual(checking.title, "Checking for Updates…")
+        XCTAssertFalse(checking.isEnabled)
+
+        let installing = UpdateMenuPresentation.checkAppearance(for: .installing)
+        XCTAssertEqual(installing.title, "Installing Update…")
+        XCTAssertFalse(installing.isEnabled)
+    }
+
+    func testUnavailableStateIsDisabledWithExplanation() {
+        let appearance = UpdateMenuPresentation.checkAppearance(for: .unavailable)
+
+        XCTAssertFalse(appearance.isEnabled)
+        XCTAssertEqual(appearance.toolTip, UpdateMenuPresentation.unavailableToolTip)
+    }
+
+    func testAutomaticChecksShowACheckmarkWhenOn() {
+        let appearance = UpdateMenuPresentation.automaticAppearance(isOn: true, activity: .idle)
+
+        XCTAssertEqual(appearance.title, "Automatically Check for Updates")
+        XCTAssertEqual(appearance.state, .on)
+        XCTAssertTrue(appearance.isEnabled)
+    }
+
+    func testAutomaticChecksShowNoCheckmarkWhenOff() {
+        let appearance = UpdateMenuPresentation.automaticAppearance(isOn: false, activity: .idle)
+
+        XCTAssertEqual(appearance.state, .off)
+        XCTAssertTrue(appearance.isEnabled)
+    }
+
+    func testAutomaticChecksCannotBeTurnedOnWhenUpdatingIsUnavailable() {
+        let appearance = UpdateMenuPresentation.automaticAppearance(isOn: true, activity: .unavailable)
+
+        XCTAssertEqual(appearance.state, .off)
+        XCTAssertFalse(appearance.isEnabled)
+        XCTAssertEqual(appearance.toolTip, UpdateMenuPresentation.unavailableToolTip)
+    }
+
+    func testAutomaticChecksStayEnabledWhileACheckRuns() {
+        XCTAssertTrue(UpdateMenuPresentation.automaticAppearance(isOn: true, activity: .checking).isEnabled)
+    }
+}
+
+final class UpdatePromptTextTests: XCTestCase {
+    func testEmptyNotesLeaveJustTheRestartNotice() {
+        XCTAssertEqual(
+            UpdatePromptText.informativeText(releaseNotes: "   \n  "),
+            UpdatePromptText.restartNotice
+        )
+    }
+
+    func testNotesArePresentedAboveTheRestartNotice() {
+        let text = UpdatePromptText.informativeText(releaseNotes: "Fixed the HUD")
+
+        XCTAssertTrue(text.hasPrefix("Fixed the HUD"))
+        XCTAssertTrue(text.hasSuffix(UpdatePromptText.restartNotice))
+    }
+
+    func testLongNotesAreTruncated() {
+        let notes = String(repeating: "a", count: 5_000)
+        let text = UpdatePromptText.informativeText(releaseNotes: notes, limit: 100)
+
+        XCTAssertTrue(text.contains("…"))
+        XCTAssertLessThan(text.count, 200)
+        XCTAssertTrue(text.hasSuffix(UpdatePromptText.restartNotice))
+    }
+
+    func testNotesShorterThanTheLimitAreKeptWhole() {
+        let text = UpdatePromptText.informativeText(releaseNotes: "Short", limit: 100)
+
+        XCTAssertFalse(text.contains("…"))
+    }
+}

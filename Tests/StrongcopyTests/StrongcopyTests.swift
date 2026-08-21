@@ -160,7 +160,13 @@ final class StatusMenuItemTests: XCTestCase {
     func testMenuItemOrderAndTitles() {
         XCTAssertEqual(
             StatusMenuItem.allCases.map(\.title),
-            ["About Strongcopy", "Open at Login", "Quit Strongcopy"]
+            [
+                "About Strongcopy",
+                "Check for Updates…",
+                "Automatically Check for Updates",
+                "Open at Login",
+                "Quit Strongcopy",
+            ]
         )
     }
 }

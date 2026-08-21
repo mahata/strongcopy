@@ -7,11 +7,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let statusItemController = StatusItemController()
+        let scheduler = TimerScheduler()
+
+        let statusItemController = StatusItemController(
+            updates: UpdateController(scheduler: scheduler)
+        )
         statusItemController.start()
         self.statusItemController = statusItemController
 
-        let scheduler = TimerScheduler()
         let feedbackController = CopyFeedbackController(
             presenter: CopyHUDPresenter(),
             scheduler: scheduler

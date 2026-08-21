@@ -75,7 +75,7 @@ enum UpdateActivity: Equatable {
 @MainActor
 final class UpdateController {
     static let checkInterval: TimeInterval = 24 * 60 * 60
-    static let unavailableMessage =
+    nonisolated static let unavailableMessage =
         "Updates are available when Strongcopy runs from a signed app bundle, not from a development build."
 
     weak var presenter: (any UpdatePresenting)?
@@ -106,6 +106,23 @@ final class UpdateController {
         self.installedVersion = installedVersion
         self.isSupported = isSupported
         self.now = now
+    }
+
+    convenience init(bundle: Bundle = .main, scheduler: any Scheduling) {
+        let installedVersion = (bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+            .flatMap(AppVersion.init)
+
+        self.init(
+            feed: GitHubUpdateFeed(),
+            installer: DiskImageUpdateInstaller(bundle: bundle),
+            preferences: UpdatePreferences(),
+            scheduler: scheduler,
+            installedVersion: installedVersion,
+            isSupported: UpdateAvailability.isSupported(
+                bundleURL: bundle.bundleURL,
+                teamIdentifier: CodeSignatureInspector.runningIdentity()?.teamIdentifier
+            )
+        )
     }
 
     var activity: UpdateActivity {

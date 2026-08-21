@@ -29,6 +29,8 @@ enum StatusItemAppearance {
 
 enum StatusMenuItem: CaseIterable {
     case about
+    case checkForUpdates
+    case automaticUpdates
     case launchAtLogin
     case quit
 
@@ -36,11 +38,75 @@ enum StatusMenuItem: CaseIterable {
         switch self {
         case .about:
             return "About Strongcopy"
+        case .checkForUpdates:
+            return "Check for Updates…"
+        case .automaticUpdates:
+            return "Automatically Check for Updates"
         case .launchAtLogin:
             return "Open at Login"
         case .quit:
             return "Quit Strongcopy"
         }
+    }
+}
+
+enum UpdateMenuPresentation {
+    struct Appearance: Equatable {
+        let title: String
+        let state: NSControl.StateValue
+        let isEnabled: Bool
+        let toolTip: String?
+    }
+
+    static let unavailableToolTip = UpdateController.unavailableMessage
+
+    static func checkAppearance(for activity: UpdateActivity) -> Appearance {
+        switch activity {
+        case .unavailable:
+            return Appearance(
+                title: StatusMenuItem.checkForUpdates.title,
+                state: .off,
+                isEnabled: false,
+                toolTip: unavailableToolTip
+            )
+        case .idle:
+            return Appearance(
+                title: StatusMenuItem.checkForUpdates.title,
+                state: .off,
+                isEnabled: true,
+                toolTip: nil
+            )
+        case .checking:
+            return Appearance(title: "Checking for Updates…", state: .off, isEnabled: false, toolTip: nil)
+        case .installing:
+            return Appearance(title: "Installing Update…", state: .off, isEnabled: false, toolTip: nil)
+        }
+    }
+
+    static func automaticAppearance(isOn: Bool, activity: UpdateActivity) -> Appearance {
+        let title = StatusMenuItem.automaticUpdates.title
+
+        guard activity != .unavailable else {
+            return Appearance(title: title, state: .off, isEnabled: false, toolTip: unavailableToolTip)
+        }
+
+        return Appearance(title: title, state: isOn ? .on : .off, isEnabled: true, toolTip: nil)
+    }
+}
+
+enum UpdatePromptText {
+    static let restartNotice = "Strongcopy will replace itself and restart."
+
+    /// Release notes are generated from merged pull requests and can run long, so
+    /// the alert shows an opening excerpt rather than the whole changelog.
+    static func informativeText(releaseNotes: String, limit: Int = 600) -> String {
+        let notes = releaseNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !notes.isEmpty else {
+            return restartNotice
+        }
+
+        let excerpt = notes.count > limit ? notes.prefix(limit).trimmingCharacters(in: .whitespacesAndNewlines) + "…" : notes
+        return "\(excerpt)\n\n\(restartNotice)"
     }
 }
 
@@ -68,16 +134,22 @@ enum AboutInfo {
 final class StatusItemController: NSObject {
     private let bundle: Bundle
     private let launchAtLogin: LaunchAtLoginController
+    private let updates: UpdateController
     private var statusItem: NSStatusItem?
     private var launchAtLoginItem: NSMenuItem?
+    private var checkForUpdatesItem: NSMenuItem?
+    private var automaticUpdatesItem: NSMenuItem?
 
     init(
         bundle: Bundle = .main,
-        launchAtLogin: LaunchAtLoginController? = nil
+        launchAtLogin: LaunchAtLoginController? = nil,
+        updates: UpdateController? = nil
     ) {
         self.bundle = bundle
         self.launchAtLogin = launchAtLogin ?? LaunchAtLoginController()
+        self.updates = updates ?? UpdateController(bundle: bundle, scheduler: TimerScheduler())
         super.init()
+        self.updates.presenter = self
     }
 
     func start() {
@@ -92,9 +164,12 @@ final class StatusItemController: NSObject {
         }
         statusItem.menu = makeMenu()
         self.statusItem = statusItem
+        updates.start()
     }
 
     func stop() {
+        updates.stop()
+
         guard let statusItem else {
             return
         }
@@ -102,6 +177,8 @@ final class StatusItemController: NSObject {
         NSStatusBar.system.removeStatusItem(statusItem)
         self.statusItem = nil
         launchAtLoginItem = nil
+        checkForUpdatesItem = nil
+        automaticUpdatesItem = nil
     }
 
     private func showAbout() {
@@ -131,7 +208,25 @@ final class StatusItemController: NSObject {
                     action: #selector(handleAbout),
                     keyEquivalent: ""
                 ).target = self
+            case .checkForUpdates:
+                menu.addItem(NSMenuItem.separator())
+                let menuItem = menu.addItem(
+                    withTitle: item.title,
+                    action: #selector(handleCheckForUpdates),
+                    keyEquivalent: ""
+                )
+                menuItem.target = self
+                checkForUpdatesItem = menuItem
+            case .automaticUpdates:
+                let menuItem = menu.addItem(
+                    withTitle: item.title,
+                    action: #selector(handleAutomaticUpdates),
+                    keyEquivalent: ""
+                )
+                menuItem.target = self
+                automaticUpdatesItem = menuItem
             case .launchAtLogin:
+                menu.addItem(NSMenuItem.separator())
                 let menuItem = menu.addItem(
                     withTitle: item.title,
                     action: #selector(handleLaunchAtLogin),
@@ -149,7 +244,29 @@ final class StatusItemController: NSObject {
             }
         }
         refreshLaunchAtLoginItem()
+        refreshUpdateItems()
         return menu
+    }
+
+    private func refreshUpdateItems() {
+        let activity = updates.activity
+
+        if let checkForUpdatesItem {
+            let appearance = UpdateMenuPresentation.checkAppearance(for: activity)
+            checkForUpdatesItem.title = appearance.title
+            checkForUpdatesItem.isEnabled = appearance.isEnabled
+            checkForUpdatesItem.toolTip = appearance.toolTip
+        }
+
+        if let automaticUpdatesItem {
+            let appearance = UpdateMenuPresentation.automaticAppearance(
+                isOn: updates.automaticChecksEnabled,
+                activity: activity
+            )
+            automaticUpdatesItem.state = appearance.state
+            automaticUpdatesItem.isEnabled = appearance.isEnabled
+            automaticUpdatesItem.toolTip = appearance.toolTip
+        }
     }
 
     private func refreshLaunchAtLoginItem() {
@@ -210,13 +327,57 @@ final class StatusItemController: NSObject {
     }
 
     @objc
+    private func handleCheckForUpdates() {
+        updates.checkForUpdates(userInitiated: true)
+        refreshUpdateItems()
+    }
+
+    @objc
+    private func handleAutomaticUpdates() {
+        updates.toggleAutomaticChecks()
+        refreshUpdateItems()
+    }
+
+    @objc
     private func handleQuit() {
         quit()
+    }
+}
+
+extension StatusItemController: UpdatePresenting {
+    func presentUpdatePrompt(_ update: AvailableUpdate) -> UpdatePromptResponse {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Strongcopy \(update.version) is available"
+        alert.informativeText = UpdatePromptText.informativeText(releaseNotes: update.releaseNotes)
+        alert.addButton(withTitle: "Update Now")
+        alert.addButton(withTitle: "Later")
+
+        return alert.runModal() == .alertFirstButtonReturn ? .install : .later
+    }
+
+    func presentNoUpdateAvailable(currentVersion: AppVersion) {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Strongcopy is up to date"
+        alert.informativeText = "Version \(currentVersion) is the latest release."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    func presentFailure(message: String) {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Couldn't update Strongcopy"
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }
 
 extension StatusItemController: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         refreshLaunchAtLoginItem()
+        refreshUpdateItems()
     }
 }
