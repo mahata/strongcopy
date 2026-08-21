@@ -9,11 +9,12 @@ A macOS utility that confirms when data has been copied to the clipboard.
 Strongcopy runs as a background accessory app. It watches the macOS pasteboard
 change counter and briefly displays a non-activating **Copied** HUD near the
 mouse pointer whenever the clipboard changes. The app's icon appears in the menu
-bar to confirm that Strongcopy is running and provides **About** and **Quit**
-actions.
+bar to confirm that Strongcopy is running and provides **About**, **Quit**, and
+software update actions.
 
 Strongcopy does not read, log, or retain clipboard contents. It also does not
-require Accessibility or notification permission.
+require Accessibility or notification permission. It does contact GitHub once a
+day to look for a new release, which you can turn off from the menu.
 
 > [!NOTE]
 > Strongcopy observes pasteboard changes rather than intercepting Command-C.
@@ -40,6 +41,8 @@ Apple, so macOS Gatekeeper can verify them without requiring a security
 override. Strongcopy runs without a Dock icon; it puts its icon in the menu bar
 so you can confirm it is running. Click the menu bar icon and choose
 **Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
+This is the only install you have to do by hand; Strongcopy keeps itself up to
+date from then on.
 
 ### Opening Strongcopy at Login
 
@@ -60,6 +63,40 @@ the relevant System Settings pane.
 > the login item by location. Ad-hoc signed local builds get a new signature on
 > every build, so login items registered from them can go stale; notarized
 > releases are stable.
+
+### Keeping Strongcopy Up to Date
+
+Strongcopy updates itself. Once a day it asks GitHub for the latest release, and
+when one is newer than the running copy it offers to install it. Choosing
+**Update Now** downloads the release disk image, replaces the installed app, and
+restarts it. Choosing **Later** dismisses that version for good; you will not be
+asked about it again, only about something newer. Since a release is published
+for every change merged to `main`, this keeps a steady stream of patch releases
+from turning into a steady stream of prompts.
+
+**Check for Updates…** asks straight away and reports the result either way,
+including for a version you previously dismissed. **Automatically Check for
+Updates** turns the daily check on and off; it starts out on. With it off,
+nothing contacts GitHub unless you ask.
+
+An update is only installed if the downloaded copy is signed by the same
+Developer ID as the copy already running, and carries the version the release
+claims. The published `.sha256` file is checked too, but only to catch a damaged
+download: it travels beside the disk image, so it says nothing about who built
+it. The signature is what does. A newer version is also required, so a withdrawn
+release cannot move you backwards.
+
+> [!NOTE]
+> Both update items are greyed out unless Strongcopy runs from an app bundle
+> signed with a Developer ID, because the signature of the running copy is what
+> the download is checked against. Development builds and ad-hoc signed local
+> builds have no such signature, so they never check for or install updates.
+
+> [!NOTE]
+> Installing writes to the folder holding the app, so an update fails if you
+> cannot write there. Strongcopy reports this rather than asking for an
+> administrator password. Keeping the app in `/Applications` or `~/Applications`
+> avoids it.
 
 ### Building the App
 
@@ -108,6 +145,9 @@ Strongcopy/
 │   │   ├── CopyFeedback.swift      # HUD feedback
 │   │   ├── StatusItemController.swift # Menu bar status item
 │   │   ├── LaunchAtLogin.swift     # Login item registration
+│   │   ├── UpdateFeed.swift        # Release versions and the GitHub feed
+│   │   ├── UpdateController.swift  # When an update is offered
+│   │   ├── UpdateInstaller.swift   # Signature checks and installation
 │   │   └── Scheduling.swift        # Timer abstraction
 │   ├── StrongcopyBrand/
 │   │   ├── BrandCanvas.swift       # Icon canvas, squircle, palette
@@ -118,7 +158,8 @@ Strongcopy/
 └── Tests/
     └── StrongcopyTests/
         ├── StrongcopyTests.swift   # App unit tests
-        └── BrandTests.swift        # Brand artwork unit tests
+        ├── BrandTests.swift        # Brand artwork unit tests
+        └── UpdateTests.swift       # Update unit tests
 ```
 
 ### App Icon
@@ -186,6 +227,15 @@ GitHub Actions must also have permission to write repository contents. Under
 permissions**. The automatically generated tag sets the marketing version,
 while the GitHub Actions run number supplies the bundle build number.
 
+> [!IMPORTANT]
+> Installed copies find updates by asset name, so `Strongcopy-<version>.dmg` and
+> `Strongcopy-<version>.dmg.sha256` are a compatibility contract, not just a
+> convention. Renaming them, or publishing a release whose assets disagree with
+> its tag, strands every copy already in the wild: the updater refuses a release
+> it cannot match rather than downloading something unexpected. The signing
+> identity matters just as much, because an update is only installed when it
+> carries the same Developer ID as the copy it replaces.
+
 ### Dependency Updates
 
 Dependabot checks weekly for newer GitHub Actions and Swift package
@@ -199,9 +249,9 @@ more churn than a release cycle warrants.
 
 ### Current scope
 
-The initial milestone uses fixed polling and display durations. Preferences and
-sounds are not implemented yet. Global Command-C event capture is also out of
-scope.
+The initial milestone uses fixed polling and display durations. Sounds are not
+implemented yet, and the only preference is whether to check for updates
+automatically. Global Command-C event capture is also out of scope.
 
 ## License
 
