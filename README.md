@@ -172,6 +172,17 @@ GitHub Actions must also have permission to write repository contents. Under
 permissions**. The automatically generated tag sets the marketing version,
 while the GitHub Actions run number supplies the bundle build number.
 
+### Dependency Updates
+
+Dependabot checks weekly for newer GitHub Actions and Swift package
+dependencies, opening one grouped pull request per ecosystem. Workflow actions
+are pinned to commit SHAs, and Dependabot updates the pin and its trailing
+version comment together, so the pins stay both current and explicit.
+
+Because merging to `main` publishes a release, each accepted update ships as a
+new patch version. Adjust the cadence in `.github/dependabot.yml` if that is
+more churn than a release cycle warrants.
+
 ### Current scope
 
 The initial milestone uses fixed polling and display durations. Preferences and
