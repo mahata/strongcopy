@@ -8,12 +8,15 @@ enum StatusItemAppearance {
 
 enum StatusMenuItem: CaseIterable {
     case about
+    case launchAtLogin
     case quit
 
     var title: String {
         switch self {
         case .about:
             return "About Strongcopy"
+        case .launchAtLogin:
+            return "Open at Login"
         case .quit:
             return "Quit Strongcopy"
         }
@@ -41,12 +44,19 @@ enum AboutInfo {
 }
 
 @MainActor
-final class StatusItemController {
+final class StatusItemController: NSObject {
     private let bundle: Bundle
+    private let launchAtLogin: LaunchAtLoginController
     private var statusItem: NSStatusItem?
+    private var launchAtLoginItem: NSMenuItem?
 
-    init(bundle: Bundle = .main) {
+    init(
+        bundle: Bundle = .main,
+        launchAtLogin: LaunchAtLoginController? = nil
+    ) {
         self.bundle = bundle
+        self.launchAtLogin = launchAtLogin ?? LaunchAtLoginController()
+        super.init()
     }
 
     func start() {
@@ -74,6 +84,7 @@ final class StatusItemController {
 
         NSStatusBar.system.removeStatusItem(statusItem)
         self.statusItem = nil
+        launchAtLoginItem = nil
     }
 
     private func showAbout() {
@@ -91,6 +102,10 @@ final class StatusItemController {
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.delegate = self
+        // Manual enablement is authoritative; auto-enabling would re-enable the
+        // login item whenever its target responds to the action.
+        menu.autoenablesItems = false
         for item in StatusMenuItem.allCases {
             switch item {
             case .about:
@@ -99,6 +114,14 @@ final class StatusItemController {
                     action: #selector(handleAbout),
                     keyEquivalent: ""
                 ).target = self
+            case .launchAtLogin:
+                let menuItem = menu.addItem(
+                    withTitle: item.title,
+                    action: #selector(handleLaunchAtLogin),
+                    keyEquivalent: ""
+                )
+                menuItem.target = self
+                launchAtLoginItem = menuItem
             case .quit:
                 menu.addItem(NSMenuItem.separator())
                 menu.addItem(
@@ -108,7 +131,55 @@ final class StatusItemController {
                 ).target = self
             }
         }
+        refreshLaunchAtLoginItem()
         return menu
+    }
+
+    private func refreshLaunchAtLoginItem() {
+        guard let launchAtLoginItem else {
+            return
+        }
+
+        let appearance = LaunchAtLoginMenuPresentation.appearance(for: launchAtLogin.state)
+        launchAtLoginItem.state = appearance.state
+        launchAtLoginItem.isEnabled = appearance.isEnabled
+        launchAtLoginItem.toolTip = appearance.toolTip
+    }
+
+    private func handleToggleOutcome(_ outcome: LaunchAtLoginController.ToggleOutcome) {
+        switch outcome {
+        case .enabled, .disabled, .unavailable:
+            break
+        case .requiresApproval:
+            showApprovalPrompt()
+        case .failed(let message):
+            showFailure(message: message)
+        }
+
+        refreshLaunchAtLoginItem()
+    }
+
+    private func showApprovalPrompt() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Strongcopy needs approval to open at login"
+        alert.informativeText =
+            "Allow Strongcopy under Login Items in System Settings > General > Login Items."
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            launchAtLogin.openSystemSettings()
+        }
+    }
+
+    private func showFailure(message: String) {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Couldn't change the login item"
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc
@@ -117,7 +188,18 @@ final class StatusItemController {
     }
 
     @objc
+    private func handleLaunchAtLogin() {
+        handleToggleOutcome(launchAtLogin.toggle())
+    }
+
+    @objc
     private func handleQuit() {
         quit()
+    }
+}
+
+extension StatusItemController: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        refreshLaunchAtLoginItem()
     }
 }
