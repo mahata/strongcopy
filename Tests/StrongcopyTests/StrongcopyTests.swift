@@ -279,6 +279,14 @@ final class LaunchAtLoginAvailabilityTests: XCTestCase {
         )
     }
 
+    func testAppBundleOutsideApplicationsIsSupported() {
+        XCTAssertTrue(
+            LaunchAtLoginAvailability.isSupported(
+                bundleURL: URL(fileURLWithPath: "/Users/example/Downloads/Strongcopy.app")
+            )
+        )
+    }
+
     func testBareExecutableDirectoryIsNotSupported() {
         XCTAssertFalse(
             LaunchAtLoginAvailability.isSupported(

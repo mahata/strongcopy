@@ -54,11 +54,11 @@ the relevant System Settings pane.
 
 > [!NOTE]
 > **Open at Login** is greyed out unless Strongcopy runs from a real app bundle,
-> so it is unavailable during development with `swift run`. Install the app in
-> **Applications** before enabling it, and avoid moving the app afterwards,
-> because macOS tracks the login item by location. Ad-hoc signed local builds
-> get a new signature on every build, so login items registered from them can
-> go stale; notarized releases are stable.
+> so it is unavailable during development with `swift run`. The bundle itself can
+> live anywhere, but avoid moving it once the item is on, because macOS tracks
+> the login item by location. Ad-hoc signed local builds get a new signature on
+> every build, so login items registered from them can go stale; notarized
+> releases are stable.
 
 ### Building the App
 

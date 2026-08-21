@@ -147,7 +147,7 @@ enum LaunchAtLoginMenuPresentation {
     }
 
     static let unavailableToolTip =
-        "Available when Strongcopy runs from the installed app in Applications."
+        "Available when Strongcopy runs from its app bundle, not from a development build."
 
     static func appearance(for state: LaunchAtLoginState) -> Appearance {
         switch state {
