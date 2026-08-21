@@ -40,6 +40,26 @@ override. Strongcopy runs without a Dock icon; it adds a clipboard icon to the
 menu bar so you can confirm it is running. Click the menu bar icon and choose
 **Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
 
+### Opening Strongcopy at Login
+
+Click the menu bar icon and choose **Open at Login** to have macOS start
+Strongcopy automatically when you log in. The item is off until you turn it on,
+and choosing it again turns it back off. The checkmark reflects the system
+setting, so it stays accurate even if you change it from **System Settings >
+General > Login Items**.
+
+macOS may require you to approve the login item before it takes effect. When
+that happens, Strongcopy shows a dash instead of a checkmark and offers to open
+the relevant System Settings pane.
+
+> [!NOTE]
+> **Open at Login** is greyed out unless Strongcopy runs from a real app bundle,
+> so it is unavailable during development with `swift run`. Install the app in
+> **Applications** before enabling it, and avoid moving the app afterwards,
+> because macOS tracks the login item by location. Ad-hoc signed local builds
+> get a new signature on every build, so login items registered from them can
+> go stale; notarized releases are stable.
+
 ### Building the App
 
 ```bash
@@ -86,6 +106,7 @@ Strongcopy/
 │       ├── ClipboardMonitor.swift  # Pasteboard change detection
 │       ├── CopyFeedback.swift      # HUD feedback
 │       ├── StatusItemController.swift # Menu bar status item
+│       ├── LaunchAtLogin.swift     # Login item registration
 │       └── Scheduling.swift        # Timer abstraction
 └── Tests/
     └── StrongcopyTests/
@@ -132,8 +153,8 @@ while the GitHub Actions run number supplies the bundle build number.
 ### Current scope
 
 The initial milestone uses fixed polling and display durations. Preferences,
-launch at login, sounds, and a branded app icon are not implemented yet. Global
-Command-C event capture is also out of scope.
+sounds, and a branded app icon are not implemented yet. Global Command-C event
+capture is also out of scope.
 
 ## License
 
