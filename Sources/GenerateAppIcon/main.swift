@@ -19,42 +19,49 @@ enum IconSet {
     ]
 }
 
-func fail(_ message: String, code: Int32 = 1) -> Never {
-    FileHandle.standardError.write(Data("\(message)\n".utf8))
-    exit(code)
+struct GenerationFailure: Error {
+    let message: String
+    let exitCode: Int32
+
+    init(_ message: String, exitCode: Int32 = 1) {
+        self.message = message
+        self.exitCode = exitCode
+    }
 }
 
-func writePNG(_ image: CGImage, to url: URL) {
+func writePNG(_ image: CGImage, to url: URL) throws {
     guard let destination = CGImageDestinationCreateWithURL(
         url as CFURL,
         UTType.png.identifier as CFString,
         1,
         nil
     ) else {
-        fail("Could not create \(url.path)")
+        throw GenerationFailure("Could not create \(url.path)")
     }
 
     CGImageDestinationAddImage(destination, image, nil)
 
     guard CGImageDestinationFinalize(destination) else {
-        fail("Could not write \(url.path)")
+        throw GenerationFailure("Could not write \(url.path)")
     }
 }
 
-func writeIconset(to directory: URL) {
+func writeIconset(to directory: URL) throws {
     var renditions: [Int: CGImage] = [:]
 
     for member in IconSet.members {
-        guard let image = renditions[member.pixelSize] ?? BrandArtwork.renderAppIcon(pixelSize: member.pixelSize) else {
-            fail("Could not render the \(member.pixelSize)px icon")
+        let rendition = renditions[member.pixelSize] ?? BrandArtwork.renderAppIcon(pixelSize: member.pixelSize)
+
+        guard let rendition else {
+            throw GenerationFailure("Could not render the \(member.pixelSize)px icon")
         }
 
-        renditions[member.pixelSize] = image
-        writePNG(image, to: directory.appendingPathComponent(member.fileName))
+        renditions[member.pixelSize] = rendition
+        try writePNG(rendition, to: directory.appendingPathComponent(member.fileName))
     }
 }
 
-func convertToICNS(iconset: URL, output: URL) {
+func convertToICNS(iconset: URL, output: URL) throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
     process.arguments = ["--convert", "icns", "--output", output.path, iconset.path]
@@ -62,48 +69,57 @@ func convertToICNS(iconset: URL, output: URL) {
     do {
         try process.run()
     } catch {
-        fail("Could not run iconutil: \(error.localizedDescription)")
+        throw GenerationFailure("Could not run iconutil: \(error.localizedDescription)")
     }
 
     process.waitUntilExit()
 
     guard process.terminationStatus == 0 else {
-        fail("iconutil failed with status \(process.terminationStatus)")
+        throw GenerationFailure("iconutil failed with status \(process.terminationStatus)")
     }
 }
 
-let arguments = Array(CommandLine.arguments.dropFirst())
-
-guard arguments.count == 1 else {
-    fail("Usage: swift run GenerateAppIcon <output-icns-path>", code: 64)
+func createDirectory(at url: URL) throws {
+    do {
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    } catch {
+        throw GenerationFailure("Could not create \(url.path): \(error.localizedDescription)")
+    }
 }
 
-let outputURL = URL(fileURLWithPath: arguments[0]).standardizedFileURL
-let fileManager = FileManager.default
+func generateIcon(at outputPath: String) throws {
+    let fileManager = FileManager.default
+    let outputURL = URL(fileURLWithPath: outputPath).standardizedFileURL
+    try createDirectory(at: outputURL.deletingLastPathComponent())
+
+    let workDirectory = fileManager.temporaryDirectory
+        .appendingPathComponent("strongcopy-icon-\(UUID().uuidString)")
+    let iconsetURL = workDirectory.appendingPathComponent("AppIcon.iconset")
+    try createDirectory(at: iconsetURL)
+
+    // Unwinding from a render, write, or iconutil failure has to take the scratch
+    // iconset with it, so the temporary directory never outlives this call.
+    defer { try? fileManager.removeItem(at: workDirectory) }
+
+    try writeIconset(to: iconsetURL)
+    try? fileManager.removeItem(at: outputURL)
+    try convertToICNS(iconset: iconsetURL, output: outputURL)
+
+    print("Created \(outputURL.path)")
+}
 
 do {
-    try fileManager.createDirectory(
-        at: outputURL.deletingLastPathComponent(),
-        withIntermediateDirectories: true
-    )
+    let arguments = Array(CommandLine.arguments.dropFirst())
+
+    guard arguments.count == 1 else {
+        throw GenerationFailure("Usage: swift run GenerateAppIcon <output-icns-path>", exitCode: 64)
+    }
+
+    try generateIcon(at: arguments[0])
+} catch let failure as GenerationFailure {
+    FileHandle.standardError.write(Data("\(failure.message)\n".utf8))
+    exit(failure.exitCode)
 } catch {
-    fail("Could not create \(outputURL.deletingLastPathComponent().path): \(error.localizedDescription)")
+    FileHandle.standardError.write(Data("\(error.localizedDescription)\n".utf8))
+    exit(1)
 }
-
-let workDirectory = fileManager.temporaryDirectory
-    .appendingPathComponent("strongcopy-icon-\(UUID().uuidString)")
-let iconsetURL = workDirectory.appendingPathComponent("AppIcon.iconset")
-
-do {
-    try fileManager.createDirectory(at: iconsetURL, withIntermediateDirectories: true)
-} catch {
-    fail("Could not create \(iconsetURL.path): \(error.localizedDescription)")
-}
-
-writeIconset(to: iconsetURL)
-
-try? fileManager.removeItem(at: outputURL)
-convertToICNS(iconset: iconsetURL, output: outputURL)
-try? fileManager.removeItem(at: workDirectory)
-
-print("Created \(outputURL.path)")

@@ -114,7 +114,11 @@ cp "$ROOT_DIRECTORY/Packaging/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
 echo "Generating the app icon..."
 mkdir -p "$(dirname "$APP_ICON")"
-swift run --package-path "$ROOT_DIRECTORY" GenerateAppIcon "$APP_ICON"
+swift run \
+    --package-path "$ROOT_DIRECTORY" \
+    --configuration release \
+    --scratch-path "$ROOT_DIRECTORY/.build/package-icon" \
+    GenerateAppIcon "$APP_ICON"
 
 if [[ "$CODESIGN_IDENTITY" == "-" ]]; then
     codesign --force --sign - "$APP_BUNDLE"
