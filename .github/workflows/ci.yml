@@ -1,10 +1,20 @@
 name: CI
 
+# A successful CI run on main publishes a release, so changes that cannot affect
+# the app are kept out of this workflow. The landing page has its own.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "web/**"
+      - "scripts/verify-landing-page.sh"
+      - ".github/workflows/pages.yml"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "web/**"
+      - "scripts/verify-landing-page.sh"
+      - ".github/workflows/pages.yml"
 
 concurrency:
   group: ci-${{ github.ref }}
