@@ -166,6 +166,62 @@ final class StatusMenuItemTests: XCTestCase {
 }
 
 @MainActor
+final class StatusItemAppearanceTests: XCTestCase {
+    func testMenuBarImageIsATemplateSoTheMenuBarCanTintIt() {
+        XCTAssertTrue(StatusItemAppearance.menuBarImage().isTemplate)
+    }
+
+    func testMenuBarImageIsSquareAtTheMenuBarPointSize() {
+        let image = StatusItemAppearance.menuBarImage()
+
+        XCTAssertEqual(image.size.width, StatusItemAppearance.pointSize)
+        XCTAssertEqual(image.size.height, StatusItemAppearance.pointSize)
+    }
+
+    func testMenuBarImageCarriesTheAccessibilityDescription() {
+        XCTAssertEqual(
+            StatusItemAppearance.menuBarImage().accessibilityDescription,
+            StatusItemAppearance.accessibilityDescription
+        )
+    }
+
+    func testMenuBarImageDrawsTheBrandMark() throws {
+        let side = Int(StatusItemAppearance.pointSize)
+        // Redrawn into a context whose layout is known, so sampling does not have to
+        // guess where AppKit put the alpha channel.
+        let context = try XCTUnwrap(
+            CGContext(
+                data: nil,
+                width: side,
+                height: side,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        StatusItemAppearance.menuBarImage().draw(in: NSRect(x: 0, y: 0, width: side, height: side))
+        NSGraphicsContext.restoreGraphicsState()
+
+        let rendered = try XCTUnwrap(context.makeImage())
+        let backing = try XCTUnwrap(rendered.dataProvider?.data)
+        let bytes = try XCTUnwrap(CFDataGetBytePtr(backing))
+        let bytesPerPixel = rendered.bitsPerPixel / 8
+        let alpha = bytesPerPixel - 1
+
+        let center = (side / 2) * rendered.bytesPerRow + (side / 2) * bytesPerPixel
+        let corner = 0
+
+        // The stacked cards cover the middle and leave the corner empty.
+        XCTAssertGreaterThan(bytes[center + alpha], 0)
+        XCTAssertEqual(bytes[corner + alpha], 0)
+    }
+}
+
+@MainActor
 final class LaunchAtLoginControllerTests: XCTestCase {
     func testTogglingDisabledItemRegistersAndReportsEnabled() {
         let loginItem = FakeLoginItem(state: .disabled, stateAfterRegister: .enabled)
