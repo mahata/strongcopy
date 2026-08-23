@@ -82,7 +82,8 @@ build_architecture() {
         --configuration release \
         --scratch-path "$scratch_path" \
         --triple "$target" \
-        --sdk "$SDK_PATH" >&2
+        --sdk "$SDK_PATH" \
+        --product "$APP_NAME" >&2
 
     swift build \
         --package-path "$ROOT_DIRECTORY" \
@@ -90,6 +91,7 @@ build_architecture() {
         --scratch-path "$scratch_path" \
         --triple "$target" \
         --sdk "$SDK_PATH" \
+        --product "$APP_NAME" \
         --show-bin-path
 }
 
@@ -112,7 +114,7 @@ cp "$ROOT_DIRECTORY/Packaging/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
 echo "Generating the app icon..."
 mkdir -p "$(dirname "$APP_ICON")"
-swift "$ROOT_DIRECTORY/scripts/generate-app-icon.swift" "$APP_ICON"
+swift run --package-path "$ROOT_DIRECTORY" GenerateAppIcon "$APP_ICON"
 
 if [[ "$CODESIGN_IDENTITY" == "-" ]]; then
     codesign --force --sign - "$APP_BUNDLE"

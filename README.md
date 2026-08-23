@@ -100,36 +100,44 @@ This project uses Swift Package Manager and follows a TDD (Test-Driven Developme
 Strongcopy/
 ├── Package.swift              # Swift Package Manager configuration
 ├── Sources/
-│   └── Strongcopy/
-│       ├── Strongcopy.swift        # Application entry point
-│       ├── AppDelegate.swift       # Application lifecycle
-│       ├── ClipboardMonitor.swift  # Pasteboard change detection
-│       ├── CopyFeedback.swift      # HUD feedback
-│       ├── StatusItemController.swift # Menu bar status item
-│       ├── LaunchAtLogin.swift     # Login item registration
-│       └── Scheduling.swift        # Timer abstraction
+│   ├── Strongcopy/
+│   │   ├── Strongcopy.swift        # Application entry point
+│   │   ├── AppDelegate.swift       # Application lifecycle
+│   │   ├── ClipboardMonitor.swift  # Pasteboard change detection
+│   │   ├── CopyFeedback.swift      # HUD feedback
+│   │   ├── StatusItemController.swift # Menu bar status item
+│   │   ├── LaunchAtLogin.swift     # Login item registration
+│   │   └── Scheduling.swift        # Timer abstraction
+│   ├── StrongcopyBrand/
+│   │   ├── BrandCanvas.swift       # Icon canvas, squircle, palette
+│   │   ├── BrandMark.swift         # Card and checkmark geometry
+│   │   └── BrandArtwork.swift      # App icon rendering
+│   └── GenerateAppIcon/
+│       └── main.swift              # Writes AppIcon.icns
 └── Tests/
     └── StrongcopyTests/
-        └── StrongcopyTests.swift  # Unit tests
+        ├── StrongcopyTests.swift   # App unit tests
+        └── BrandTests.swift        # Brand artwork unit tests
 ```
 
 ### App Icon
 
-The app icon is drawn in code rather than stored as a binary asset.
-`scripts/generate-app-icon.swift` renders a stack of two copied cards carrying a
+The app icon is drawn in code rather than stored as a binary asset. The
+`StrongcopyBrand` target lays out a stack of two copied cards carrying a
 checkmark — the confirmation Strongcopy exists to provide — onto the standard
-macOS squircle. It draws with CoreGraphics and writes the PNGs with ImageIO, so
-it needs no framework beyond the system ones. Every size in the icon set is
+macOS squircle, drawing it with CoreGraphics. Every size in the icon set is
 drawn as vectors at its native resolution, with heavier artwork at 16 and 32
-pixels so the checkmark stays legible.
+pixels so the checkmark stays legible. The `GenerateAppIcon` target writes those
+renditions out with ImageIO and hands the iconset to `iconutil`, so the icon
+needs no framework beyond the system ones.
 
-`scripts/package-macos.sh` runs the generator during packaging, writing
-`Contents/Resources/AppIcon.icns` into the bundle before it is signed and
+`scripts/package-macos.sh` runs the `GenerateAppIcon` target during packaging,
+writing `Contents/Resources/AppIcon.icns` into the bundle before it is signed and
 reusing the same file as the DMG volume icon. To render and inspect the icon on
 its own:
 
 ```bash
-swift scripts/generate-app-icon.swift /tmp/AppIcon.icns
+swift run GenerateAppIcon /tmp/AppIcon.icns
 scripts/verify-app-icon.sh /tmp/AppIcon.icns
 iconutil --convert iconset --output /tmp/AppIcon.iconset /tmp/AppIcon.icns
 open /tmp/AppIcon.iconset
