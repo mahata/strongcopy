@@ -8,8 +8,9 @@ A macOS utility that confirms when data has been copied to the clipboard.
 
 Strongcopy runs as a background accessory app. It watches the macOS pasteboard
 change counter and briefly displays a non-activating **Copied** HUD near the
-mouse pointer whenever the clipboard changes. A clipboard icon in the menu bar
-confirms that Strongcopy is running and provides **About** and **Quit** actions.
+mouse pointer whenever the clipboard changes. The app's icon appears in the menu
+bar to confirm that Strongcopy is running and provides **About** and **Quit**
+actions.
 
 Strongcopy does not read, log, or retain clipboard contents. It also does not
 require Accessibility or notification permission.
@@ -36,8 +37,8 @@ require Accessibility or notification permission.
 
 Release builds are signed with a Developer ID certificate and notarized by
 Apple, so macOS Gatekeeper can verify them without requiring a security
-override. Strongcopy runs without a Dock icon; it adds a clipboard icon to the
-menu bar so you can confirm it is running. Click the menu bar icon and choose
+override. Strongcopy runs without a Dock icon; it puts its icon in the menu bar
+so you can confirm it is running. Click the menu bar icon and choose
 **Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
 
 ### Opening Strongcopy at Login
@@ -111,7 +112,7 @@ Strongcopy/
 │   ├── StrongcopyBrand/
 │   │   ├── BrandCanvas.swift       # Icon canvas, squircle, palette
 │   │   ├── BrandMark.swift         # Card and checkmark geometry
-│   │   └── BrandArtwork.swift      # App icon rendering
+│   │   └── BrandArtwork.swift      # App icon and menu bar renderings
 │   └── GenerateAppIcon/
 │       └── main.swift              # Writes AppIcon.icns
 └── Tests/
@@ -130,6 +131,11 @@ drawn as vectors at its native resolution, with heavier artwork at 16 and 32
 pixels so the checkmark stays legible. The `GenerateAppIcon` target writes those
 renditions out with ImageIO and hands the iconset to `iconutil`, so the icon
 needs no framework beyond the system ones.
+
+The menu bar reuses the same geometry. Because macOS tints menu bar images to
+suit the light and dark menu bars, the status item drops the squircle and its
+gradient and draws the mark as a template image, cutting the checkmark out of
+the front card so it shows through as the bar's own colour.
 
 `scripts/package-macos.sh` runs the `GenerateAppIcon` target during packaging,
 writing `Contents/Resources/AppIcon.icns` into the bundle before it is signed and

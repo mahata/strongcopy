@@ -55,6 +55,15 @@ public struct BrandMarkMetrics: Sendable {
             )
         }
     }
+
+    /// The tiers are keyed on the whole canvas, so a renderer showing the mark alone
+    /// converts its extent back to the canvas that mark would have been cropped from.
+    public static func forMarkExtent(_ markExtent: CGFloat) -> BrandMarkMetrics {
+        let reference = BrandMarkGeometry(metrics: forPixelSize(Int(BrandCanvas.extent)))
+        let canvasExtent = markExtent * BrandCanvas.extent / reference.bounds.height
+
+        return forPixelSize(Int(canvasExtent.rounded()))
+    }
 }
 
 /// Two offset cards carrying a checkmark: copying, with confirmation.

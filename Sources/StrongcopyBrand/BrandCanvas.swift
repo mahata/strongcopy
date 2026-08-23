@@ -46,6 +46,15 @@ public enum BrandCanvas {
         context.translateBy(x: 0, y: CGFloat(pixelSize))
         context.scaleBy(x: scale, y: -scale)
     }
+
+    /// Fits `bounds` into `extent`, centred, flipping into artwork coordinates. Used
+    /// when only part of the canvas is shown, as the menu bar mark does.
+    public static func flipToArtworkSpace(_ context: CGContext, fitting bounds: CGRect, into extent: CGSize) {
+        let scale = min(extent.width / bounds.width, extent.height / bounds.height)
+        context.translateBy(x: extent.width / 2, y: extent.height / 2)
+        context.scaleBy(x: scale, y: -scale)
+        context.translateBy(x: -bounds.midX, y: -bounds.midY)
+    }
 }
 
 public enum BrandPalette {
@@ -53,7 +62,14 @@ public enum BrandPalette {
     public static var backgroundBottom: CGColor { CGColor(srgbRed: 0.173, green: 0.333, blue: 0.910, alpha: 1) }
     public static var mark: CGColor { CGColor(srgbRed: 0.173, green: 0.333, blue: 0.910, alpha: 1) }
     public static var card: CGColor { CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1) }
-    public static var trailingCard: CGColor { CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.55) }
     public static var gloss: CGColor { CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.28) }
     public static var shadow: CGColor { CGColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.18) }
+
+    /// How far the card behind the stack recedes. The colour renderings apply it as
+    /// translucent white; the template mark applies it to alpha alone.
+    public static let trailingCardOpacity: CGFloat = 0.55
+
+    public static var trailingCard: CGColor {
+        CGColor(srgbRed: 1, green: 1, blue: 1, alpha: trailingCardOpacity)
+    }
 }

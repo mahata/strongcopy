@@ -35,6 +35,32 @@ public enum BrandArtwork {
         return context.makeImage()
     }
 
+    /// The mark alone, as a menu bar template: alpha carries the shape, so the
+    /// checkmark is cut out of the front card rather than drawn on top of it.
+    public static func drawStatusMark(in context: CGContext, extent: CGSize) {
+        let geometry = BrandMarkGeometry(metrics: .forMarkExtent(min(extent.width, extent.height)))
+
+        context.saveGState()
+        context.setShouldAntialias(true)
+        BrandCanvas.flipToArtworkSpace(context, fitting: geometry.bounds, into: extent)
+        context.beginTransparencyLayer(auxiliaryInfo: nil)
+
+        context.addPath(geometry.cardPath(geometry.trailingCard))
+        context.setFillColor(gray: 0, alpha: BrandPalette.trailingCardOpacity)
+        context.fillPath()
+
+        context.addPath(geometry.cardPath(geometry.leadingCard))
+        context.setFillColor(gray: 0, alpha: 1)
+        context.fillPath()
+
+        context.setBlendMode(.clear)
+        strokeCheckmark(in: context, geometry: geometry)
+        context.setBlendMode(.normal)
+
+        context.endTransparencyLayer()
+        context.restoreGState()
+    }
+
     private static func drawBackground(in context: CGContext, gradient: CGGradient, castsShadow: Bool) {
         let shape = BrandCanvas.squirclePath()
 

@@ -1,9 +1,30 @@
 import AppKit
+import StrongcopyBrand
 
 enum StatusItemAppearance {
-    static let symbolName = "clipboard"
     static let accessibilityDescription = "Strongcopy"
     static let tooltip = "Strongcopy is running"
+    static let pointSize: CGFloat = 16
+
+    /// The app icon's mark, redrawn as a menu bar template so macOS can tint it for
+    /// the light and dark menu bars and highlight it while the menu is open.
+    static func menuBarImage() -> NSImage {
+        let image = NSImage(
+            size: NSSize(width: pointSize, height: pointSize),
+            flipped: false
+        ) { bounds in
+            guard let context = NSGraphicsContext.current?.cgContext else {
+                return false
+            }
+
+            BrandArtwork.drawStatusMark(in: context, extent: bounds.size)
+            return true
+        }
+
+        image.isTemplate = true
+        image.accessibilityDescription = accessibilityDescription
+        return image
+    }
 }
 
 enum StatusMenuItem: CaseIterable {
@@ -66,11 +87,7 @@ final class StatusItemController: NSObject {
 
         let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
-            button.image = NSImage(
-                systemSymbolName: StatusItemAppearance.symbolName,
-                accessibilityDescription: StatusItemAppearance.accessibilityDescription
-            )
-            button.image?.isTemplate = true
+            button.image = StatusItemAppearance.menuBarImage()
             button.toolTip = StatusItemAppearance.tooltip
         }
         statusItem.menu = makeMenu()

@@ -165,6 +165,42 @@ final class StatusMenuItemTests: XCTestCase {
     }
 }
 
+final class StatusItemAppearanceTests: XCTestCase {
+    func testMenuBarImageIsATemplateSoTheMenuBarCanTintIt() {
+        XCTAssertTrue(StatusItemAppearance.menuBarImage().isTemplate)
+    }
+
+    func testMenuBarImageIsSquareAtTheMenuBarPointSize() {
+        let image = StatusItemAppearance.menuBarImage()
+
+        XCTAssertEqual(image.size.width, StatusItemAppearance.pointSize)
+        XCTAssertEqual(image.size.height, StatusItemAppearance.pointSize)
+    }
+
+    func testMenuBarImageCarriesTheAccessibilityDescription() {
+        XCTAssertEqual(
+            StatusItemAppearance.menuBarImage().accessibilityDescription,
+            StatusItemAppearance.accessibilityDescription
+        )
+    }
+
+    func testMenuBarImageDrawsTheBrandMark() throws {
+        let image = StatusItemAppearance.menuBarImage()
+        var bounds = NSRect(origin: .zero, size: image.size)
+        let rendered = try XCTUnwrap(image.cgImage(forProposedRect: &bounds, context: nil, hints: nil))
+        let backing = try XCTUnwrap(rendered.dataProvider?.data)
+        let bytes = try XCTUnwrap(CFDataGetBytePtr(backing))
+        let bytesPerPixel = rendered.bitsPerPixel / 8
+
+        let center = (rendered.height / 2) * rendered.bytesPerRow + (rendered.width / 2) * bytesPerPixel
+        let corner = 0
+
+        // The stacked cards cover the middle and leave the corner empty.
+        XCTAssertGreaterThan(bytes[center + bytesPerPixel - 1], 0)
+        XCTAssertEqual(bytes[corner + bytesPerPixel - 1], 0)
+    }
+}
+
 @MainActor
 final class LaunchAtLoginControllerTests: XCTestCase {
     func testTogglingDisabledItemRegistersAndReportsEnabled() {
