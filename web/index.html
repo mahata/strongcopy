@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Strongcopy — copy confirmation for macOS</title>
+    <meta name="description" content="A small macOS menu bar utility that flashes a Copied badge beside your pointer whenever the clipboard changes. Free, open source, and it never reads what you copied.">
+    <link rel="canonical" href="https://strongcopy.mahata.org/">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c0e14" media="(prefers-color-scheme: dark)">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Strongcopy">
+    <meta property="og:title" content="Strongcopy — copy confirmation for macOS">
+    <meta property="og:description" content="A small macOS menu bar utility that flashes a Copied badge beside your pointer whenever the clipboard changes. Free, open source, and it never reads what you copied.">
+    <meta property="og:url" content="https://strongcopy.mahata.org/">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="masthead shell">
+      <span class="wordmark">
+        <img src="icon.svg" alt="" width="28" height="28">
+        Strongcopy
+      </span>
+      <a href="https://github.com/mahata/strongcopy">GitHub</a>
+    </header>
+
+    <main>
+      <section class="hero shell">
+        <div>
+          <h1>Know it copied.</h1>
+          <p class="lede">
+            A small macOS utility that flashes a <em>Copied</em> badge beside your
+            pointer the moment the clipboard changes.
+          </p>
+          <div class="actions">
+            <a class="button" href="https://github.com/mahata/strongcopy/releases/latest">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2v8.5M4.5 7.5 8 11l3.5-3.5M2.5 13.5h11"/>
+              </svg>
+              Download for macOS
+            </a>
+            <a class="plain" href="https://github.com/mahata/strongcopy">Read the source</a>
+          </div>
+          <ul class="requirements">
+            <li>macOS 13 or later</li>
+            <li>Apple silicon and Intel</li>
+            <li>Signed and notarized by Apple</li>
+            <li>MIT licensed</li>
+          </ul>
+        </div>
+
+        <figure class="stage">
+          <div class="screen" aria-hidden="true">
+            <div class="menubar">
+              <span class="menubar__pill"></span>
+              <span class="menubar__pill"></span>
+              <svg class="menubar__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.25 3.75H7.5A2.5 2.5 0 0 0 5 6.25v12.5a2.5 2.5 0 0 0 2.5 2.5h9a2.5 2.5 0 0 0 2.5-2.5V6.25a2.5 2.5 0 0 0-2.5-2.5h-1.75"/>
+                <rect x="9.25" y="2.25" width="5.5" height="3.25" rx="1.25"/>
+              </svg>
+              <span class="menubar__clock">Tue 9:41</span>
+            </div>
+            <div class="desk">
+              <div class="lines">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="cursor">
+                <svg class="pointer" viewBox="0 0 13 19">
+                  <path d="M1 1v15.4l3.6-3.4 2.2 5 2.6-1.1-2.2-4.9 5-.3z"></path>
+                </svg>
+                <p class="hud">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="8" fill="currentColor"></circle>
+                    <path d="M4.5 8.3 6.8 10.6 11.5 5.7" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg>
+                  Copied
+                </p>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            The badge appears beside the pointer for eight tenths of a second, then
+            disappears. The menu bar icon confirms Strongcopy is running.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="points shell">
+        <h2 class="visually-hidden">Why Strongcopy</h2>
+        <article>
+          <h3>Nothing to learn</h3>
+          <p>
+            Strongcopy watches the pasteboard rather than intercepting Command-C,
+            so copies made by menus, scripts, password managers, and other apps all
+            produce the same confirmation. There is no shortcut to remember and
+            nothing to configure.
+          </p>
+        </article>
+        <article>
+          <h3>Nothing to hand over</h3>
+          <p>
+            Clipboard contents are never read, logged, or retained. Strongcopy asks
+            for neither Accessibility nor notification permission, and it makes no
+            network connections. The whole app is a few hundred lines you can read
+            yourself.
+          </p>
+        </article>
+        <article>
+          <h3>Nothing in the way</h3>
+          <p>
+            It runs as a background accessory app with no Dock icon and no window.
+            A clipboard icon in the menu bar is the only permanent trace, carrying
+            About, Open at Login, and Quit.
+          </p>
+        </article>
+      </section>
+
+      <section class="install shell">
+        <h2 id="install">Install</h2>
+        <div>
+          <ol>
+            <li>
+              <strong>Download the disk image</strong> from the latest release. Builds
+              are universal, so one download covers Apple silicon and Intel Macs.
+            </li>
+            <li>
+              <strong>Open the DMG and drag Strongcopy to Applications.</strong>
+            </li>
+            <li>
+              <strong>Open Strongcopy.</strong> Releases are signed with a Developer ID
+              certificate and notarized by Apple, so Gatekeeper lets it through
+              without a security override.
+            </li>
+          </ol>
+          <p class="note">
+            Strongcopy starts working immediately. To have it launch with your Mac,
+            click the menu bar icon and choose Open at Login.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="colophon shell">
+      <p>Free and open source under the MIT license.</p>
+      <p><a href="https://github.com/mahata/strongcopy">github.com/mahata/strongcopy</a></p>
+    </footer>
+  </body>
+</html>

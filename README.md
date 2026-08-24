@@ -115,11 +115,51 @@ Strongcopy/
 │   │   └── BrandArtwork.swift      # App icon and menu bar renderings
 │   └── GenerateAppIcon/
 │       └── main.swift              # Writes AppIcon.icns
-└── Tests/
-    └── StrongcopyTests/
-        ├── StrongcopyTests.swift   # App unit tests
-        └── BrandTests.swift        # Brand artwork unit tests
+├── Tests/
+│   └── StrongcopyTests/
+│       ├── StrongcopyTests.swift   # App unit tests
+│       └── BrandTests.swift        # Brand artwork unit tests
+└── web/                       # Landing page for strongcopy.mahata.org
 ```
+
+### Website
+
+The landing page served at <https://strongcopy.mahata.org> lives in `web/`. It is
+plain HTML and CSS with no build step, no JavaScript, and no third-party
+requests, so the deployed bytes are the committed bytes. The app icon and the
+Copied badge are redrawn there as inline SVG and CSS, matching the convention
+that artwork is code rather than a binary asset. `web/icon.svg` and
+`web/favicon.svg` mirror the squircle, palette, and card geometry defined in
+`Sources/StrongcopyBrand`, so a change to the brand there should be carried
+across by hand.
+
+Preview it locally and check it:
+
+```bash
+python3 -m http.server --directory web 8000
+scripts/verify-landing-page.sh
+```
+
+`scripts/verify-landing-page.sh` guards the parts that break silently: the
+download link still points at the latest release, the canonical URL and social
+metadata are intact, every referenced asset exists, and nothing external is
+loaded.
+
+`.github/workflows/pages.yml` runs that check on pull requests and publishes
+`web/` to GitHub Pages when `main` changes. Because a successful CI run on `main`
+cuts a release, `ci.yml` ignores the website paths so editing a paragraph of copy
+does not ship a new version of the app.
+
+Setting the site up on a fresh repository takes three manual steps:
+
+1. Under **Settings > Pages**, set the source to **GitHub Actions** and the
+   custom domain to `strongcopy.mahata.org`. No `CNAME` file belongs in `web/`;
+   workflow-based publishing reads the domain from settings and ignores the file.
+2. In Cloudflare DNS, add `CNAME strongcopy -> mahata.github.io` with the proxy
+   **disabled**. Proxying intercepts the challenge GitHub uses to issue the
+   certificate. It can be turned on later, once HTTPS works, if the zone runs in
+   Full SSL mode.
+3. Once GitHub reports the certificate as issued, enable **Enforce HTTPS**.
 
 ### App Icon
 
