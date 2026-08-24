@@ -7,13 +7,11 @@ on:
     branches: [main]
     paths-ignore:
       - "web/**"
-      - "scripts/verify-landing-page.sh"
       - ".github/workflows/pages.yml"
   pull_request:
     branches: [main]
     paths-ignore:
       - "web/**"
-      - "scripts/verify-landing-page.sh"
       - ".github/workflows/pages.yml"
 
 concurrency:
