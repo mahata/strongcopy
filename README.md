@@ -133,22 +133,16 @@ that artwork is code rather than a binary asset. `web/icon.svg` and
 `Sources/StrongcopyBrand`, so a change to the brand there should be carried
 across by hand.
 
-Preview it locally and check it:
+Preview it locally:
 
 ```bash
 python3 -m http.server --directory web 8000
-scripts/verify-landing-page.sh
 ```
 
-`scripts/verify-landing-page.sh` guards the parts that break silently: the
-download link still points at the latest release, the canonical URL and social
-metadata are intact, every referenced asset exists, and nothing external is
-loaded.
-
-`.github/workflows/pages.yml` runs that check on pull requests and publishes
-`web/` to GitHub Pages when `main` changes. Because a successful CI run on `main`
-cuts a release, `ci.yml` ignores the website paths so editing a paragraph of copy
-does not ship a new version of the app.
+`.github/workflows/pages.yml` publishes `web/` to GitHub Pages when `main`
+changes. Because a successful CI run on `main` cuts a release, `ci.yml` ignores
+the website paths so editing a paragraph of copy does not ship a new version of
+the app.
 
 Setting the site up on a fresh repository takes three manual steps:
 
