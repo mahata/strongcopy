@@ -131,12 +131,12 @@ Strongcopy/
 │   └── StrongcopyTests/
 │       ├── StrongcopyTests.swift   # App unit tests
 │       └── BrandTests.swift        # Brand artwork unit tests
-└── web/                       # Landing page for strongcopy.mahata.org
+└── web/                       # Website for strongcopy.mahata.org
 ```
 
 ### Website
 
-The landing page served at <https://strongcopy.mahata.org> lives in `web/`. It is
+The website served at <https://strongcopy.mahata.org> lives in `web/`. It is
 plain HTML and CSS with no build step, no JavaScript, and no third-party
 requests, so the deployed bytes are the committed bytes. The app icon and the
 Copied badge are redrawn there as inline SVG and CSS, matching the convention
@@ -144,6 +144,26 @@ that artwork is code rather than a binary asset. `web/icon.svg` and
 `web/favicon.svg` mirror the squircle, palette, and card geometry defined in
 `Sources/StrongcopyBrand`, so a change to the brand there should be carried
 across by hand.
+
+Three pages are published: the landing page, `web/privacy/`, and `web/support/`.
+The latter two are not decoration. App Store Connect refuses a submission
+without both a privacy policy URL and a support URL, so those pages are part of
+the App Store release path rather than the marketing site, and the URLs they
+publish should stay stable once a submission cites them. Each lives in its own
+directory so that the published address carries no `.html` extension.
+
+The privacy policy makes claims the code has to keep true: that Strongcopy reads
+only the pasteboard change counter, stores nothing, and opens no network
+connections. Those are the same claims the App Store privacy declaration
+answers, so a change to what the app reads or stores means editing the policy in
+the same commit.
+
+The app links to the policy from its menu bar, because App Review guideline
+5.1.1(i) asks for it to be reachable inside the app and not only from the App
+Store listing. That address is `StrongcopyLinks.privacyPolicy` in
+`Sources/Strongcopy/StatusItemController.swift`, so moving or renaming
+`web/privacy/` breaks the menu item unless the constant moves with it. A test
+pins the two together.
 
 Preview it locally:
 
@@ -268,11 +288,13 @@ Preparing the first submission takes these steps:
      scripts/verify-mas-package.sh dist/Strongcopy-0.1.0.pkg 0.1.0 1
    ```
 
-4. Create the app record in App Store Connect. It needs a support URL and a
-   privacy policy URL, both of which can live on
-   <https://strongcopy.mahata.org>, at least one screenshot sized 1280x800,
-   1440x900, 2560x1600, or 2880x1800, and a privacy declaration. Strongcopy
-   collects nothing, so every category answers "Data Not Collected".
+4. Create the app record in App Store Connect. The support URL is
+   <https://strongcopy.mahata.org/support/> and the privacy policy URL is
+   <https://strongcopy.mahata.org/privacy/>; both are required fields, and both
+   are served from `web/`. The record also needs at least one screenshot sized
+   1280x800, 1440x900, 2560x1600, or 2880x1800, and a privacy declaration.
+   Strongcopy collects nothing, so every category answers "Data Not Collected",
+   which is what the privacy policy already states.
 5. Upload the package with Transporter, or from the command line with the same
    App Store Connect API key the release workflow uses for notarization:
 
