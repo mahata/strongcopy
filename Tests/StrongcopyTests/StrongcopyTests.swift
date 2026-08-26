@@ -160,8 +160,69 @@ final class StatusMenuItemTests: XCTestCase {
     func testMenuItemOrderAndTitles() {
         XCTAssertEqual(
             StatusMenuItem.allCases.map(\.title),
-            ["About Strongcopy", "Open at Login", "Quit Strongcopy"]
+            ["About Strongcopy", "Privacy Policy", "Open at Login", "Quit Strongcopy"]
         )
+    }
+}
+
+final class StrongcopyLinksTests: XCTestCase {
+    func testPrivacyPolicyPointsAtThePublishedPage() {
+        XCTAssertEqual(
+            StrongcopyLinks.privacyPolicy,
+            "https://strongcopy.mahata.org/privacy/"
+        )
+    }
+
+    // The menu action drops the click when the address fails to parse, so a typo
+    // would otherwise turn the menu item into a no-op without failing a test.
+    func testPrivacyPolicyAddressParsesAsAURL() {
+        XCTAssertNotNil(URL(string: StrongcopyLinks.privacyPolicy))
+    }
+}
+
+@MainActor
+final class SpyURLOpener: URLOpening {
+    private(set) var openedURLs: [URL] = []
+
+    func open(_ url: URL) {
+        openedURLs.append(url)
+    }
+}
+
+@MainActor
+final class StatusItemMenuTests: XCTestCase {
+    func testPrivacyPolicyItemOpensThePublishedPolicyPage() throws {
+        let opener = SpyURLOpener()
+        let controller = StatusItemController(urlOpener: opener)
+        let menu = controller.makeMenu()
+
+        let item = try XCTUnwrap(menu.item(withTitle: StatusMenuItem.privacyPolicy.title))
+        let action = try XCTUnwrap(item.action)
+        _ = try XCTUnwrap(item.target as? StatusItemController).perform(action)
+
+        XCTAssertEqual(
+            opener.openedURLs.map(\.absoluteString),
+            [StrongcopyLinks.privacyPolicy]
+        )
+    }
+
+    // The controller has to stay alive for the duration: NSMenuItem holds its
+    // target weakly, so a menu built from a temporary controller comes back with
+    // every target already nil.
+    func testEveryMenuItemIsWiredToAnAction() {
+        let controller = StatusItemController(urlOpener: SpyURLOpener())
+        let menu = controller.makeMenu()
+
+        for item in StatusMenuItem.allCases {
+            let menuItem = menu.item(withTitle: item.title)
+            XCTAssertNotNil(menuItem, "\(item.title) is missing from the menu")
+            XCTAssertNotNil(menuItem?.action, "\(item.title) has no action")
+            XCTAssertIdentical(
+                menuItem?.target as? StatusItemController,
+                controller,
+                "\(item.title) is not targeted at the controller"
+            )
+        }
     }
 }
 

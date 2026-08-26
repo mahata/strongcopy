@@ -29,6 +29,7 @@ enum StatusItemAppearance {
 
 enum StatusMenuItem: CaseIterable {
     case about
+    case privacyPolicy
     case launchAtLogin
     case quit
 
@@ -36,11 +37,33 @@ enum StatusMenuItem: CaseIterable {
         switch self {
         case .about:
             return "About Strongcopy"
+        case .privacyPolicy:
+            return "Privacy Policy"
         case .launchAtLogin:
             return "Open at Login"
         case .quit:
             return "Quit Strongcopy"
         }
+    }
+}
+
+/// Addresses the app links out to. App Review guideline 5.1.1(i) asks for the
+/// privacy policy to be reachable from inside the app and not only from the
+/// App Store listing, which an accessory app with no window has to satisfy from
+/// its menu bar.
+enum StrongcopyLinks {
+    static let privacyPolicy = "https://strongcopy.mahata.org/privacy/"
+}
+
+@MainActor
+protocol URLOpening: AnyObject {
+    func open(_ url: URL)
+}
+
+@MainActor
+final class WorkspaceURLOpener: URLOpening {
+    func open(_ url: URL) {
+        NSWorkspace.shared.open(url)
     }
 }
 
@@ -68,15 +91,21 @@ enum AboutInfo {
 final class StatusItemController: NSObject {
     private let bundle: Bundle
     private let launchAtLogin: LaunchAtLoginController
+    private let urlOpener: any URLOpening
     private var statusItem: NSStatusItem?
     private var launchAtLoginItem: NSMenuItem?
 
+    // Dependencies are constructed in the body rather than as default arguments,
+    // because default arguments are evaluated in a nonisolated context outside
+    // Swift 6 mode.
     init(
         bundle: Bundle = .main,
-        launchAtLogin: LaunchAtLoginController? = nil
+        launchAtLogin: LaunchAtLoginController? = nil,
+        urlOpener: (any URLOpening)? = nil
     ) {
         self.bundle = bundle
         self.launchAtLogin = launchAtLogin ?? LaunchAtLoginController()
+        self.urlOpener = urlOpener ?? WorkspaceURLOpener()
         super.init()
     }
 
@@ -113,11 +142,21 @@ final class StatusItemController: NSObject {
         alert.runModal()
     }
 
+    private func openPrivacyPolicy() {
+        guard let url = URL(string: StrongcopyLinks.privacyPolicy) else {
+            return
+        }
+
+        urlOpener.open(url)
+    }
+
     private func quit() {
         NSApplication.shared.terminate(nil)
     }
 
-    private func makeMenu() -> NSMenu {
+    // Internal rather than private so tests can build the menu without putting a
+    // real item in the menu bar.
+    func makeMenu() -> NSMenu {
         let menu = NSMenu()
         menu.delegate = self
         // Manual enablement is authoritative; auto-enabling would re-enable the
@@ -129,6 +168,12 @@ final class StatusItemController: NSObject {
                 menu.addItem(
                     withTitle: item.title,
                     action: #selector(handleAbout),
+                    keyEquivalent: ""
+                ).target = self
+            case .privacyPolicy:
+                menu.addItem(
+                    withTitle: item.title,
+                    action: #selector(handlePrivacyPolicy),
                     keyEquivalent: ""
                 ).target = self
             case .launchAtLogin:
@@ -202,6 +247,11 @@ final class StatusItemController: NSObject {
     @objc
     private func handleAbout() {
         showAbout()
+    }
+
+    @objc
+    private func handlePrivacyPolicy() {
+        openPrivacyPolicy()
     }
 
     @objc

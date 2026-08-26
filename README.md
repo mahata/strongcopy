@@ -158,6 +158,13 @@ connections. Those are the same claims the App Store privacy declaration
 answers, so a change to what the app reads or stores means editing the policy in
 the same commit.
 
+The app links to the policy from its menu bar, because App Review guideline
+5.1.1(i) asks for it to be reachable inside the app and not only from the App
+Store listing. That address is `StrongcopyLinks.privacyPolicy` in
+`Sources/Strongcopy/StatusItemController.swift`, so moving or renaming
+`web/privacy/` breaks the menu item unless the constant moves with it. A test
+pins the two together.
+
 Preview it locally:
 
 ```bash
