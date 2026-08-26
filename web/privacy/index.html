@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy — Strongcopy</title>
+    <meta name="description" content="Strongcopy collects nothing. It reads the pasteboard change counter rather than the clipboard itself, stores no data, and makes no network connections.">
+    <link rel="canonical" href="https://strongcopy.mahata.org/privacy/">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c0e14" media="(prefers-color-scheme: dark)">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Strongcopy">
+    <meta property="og:title" content="Privacy Policy — Strongcopy">
+    <meta property="og:description" content="Strongcopy collects nothing. It reads the pasteboard change counter rather than the clipboard itself, stores no data, and makes no network connections.">
+    <meta property="og:url" content="https://strongcopy.mahata.org/privacy/">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../icon.svg">
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body>
+    <header class="masthead shell">
+      <a class="wordmark" href="/">
+        <img src="../icon.svg" alt="" width="28" height="28">
+        Strongcopy
+      </a>
+      <a href="https://github.com/mahata/strongcopy">GitHub</a>
+    </header>
+
+    <main class="shell">
+      <article class="doc">
+        <h1>Privacy Policy</h1>
+        <p class="updated">Last updated 26 August 2026</p>
+
+        <p class="summary">
+          Strongcopy collects nothing. It never reads what you copy, writes no
+          files, keeps no logs, and makes no network connections of any kind.
+          The rest of this page explains that in detail, because a claim to
+          collect nothing is easy to make and worth being able to check.
+        </p>
+
+        <h2>What Strongcopy reads</h2>
+        <p>
+          macOS keeps a counter on the system pasteboard that increases by one
+          every time anything is written to it. Strongcopy reads that counter
+          five times a second and shows the badge when the number changes. It
+          never asks the pasteboard for the item itself, so the text, image, or
+          file you copied is never handled by the app.
+        </p>
+        <p>
+          To place the badge, Strongcopy also reads the pointer location at the
+          moment of the copy. That coordinate positions the panel on screen and
+          is discarded straight after.
+        </p>
+
+        <h2>What Strongcopy stores</h2>
+        <p>
+          Nothing. There is no preferences file, no database, no cache, and no
+          log. Choosing <strong>Open at Login</strong> asks macOS to register
+          Strongcopy as a login item; that registration is held by macOS, and
+          turning the setting off removes it.
+        </p>
+
+        <h2>Network connections</h2>
+        <p>
+          Strongcopy makes none. It contains no analytics, no crash reporting,
+          no advertising, and no third-party SDKs, and it does not check for
+          updates. Nothing leaves your Mac, because nothing is ever sent.
+        </p>
+
+        <h2>Data sharing</h2>
+        <p>
+          No data is collected, so none is shared, sold, or disclosed to anyone,
+          including the developer. This applies equally to children: Strongcopy
+          collects nothing from any user, of any age.
+        </p>
+
+        <h2>Permissions</h2>
+        <p>
+          Strongcopy asks for neither Accessibility nor notification permission.
+          The Mac App Store build runs inside Apple's App Sandbox and requests
+          no sandbox exceptions.
+        </p>
+
+        <h2>Checking this yourself</h2>
+        <p>
+          Strongcopy is open source under the MIT license, and the clipboard
+          watching is seventy lines you can read in a minute:
+          <a href="https://github.com/mahata/strongcopy/blob/main/Sources/Strongcopy/ClipboardMonitor.swift">ClipboardMonitor.swift</a>.
+          The only pasteboard API it touches is <code>changeCount</code>.
+        </p>
+
+        <h2>This website</h2>
+        <p>
+          strongcopy.mahata.org is served by GitHub Pages. It sets no cookies
+          and runs no analytics or tracking scripts. GitHub records requests to
+          its servers, including IP addresses, as part of delivering the site;
+          that processing is described in the
+          <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub General Privacy Statement</a>.
+        </p>
+
+        <h2>Changes to this policy</h2>
+        <p>
+          If this policy changes, the revised version will be posted here with a
+          new date. Every past revision stays visible in the repository history.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions about privacy are welcome as an issue at
+          <a href="https://github.com/mahata/strongcopy/issues">github.com/mahata/strongcopy/issues</a>.
+          See the <a href="/support/">support page</a> for anything else.
+        </p>
+      </article>
+    </main>
+
+    <footer class="colophon shell">
+      <p>Free and open source under the MIT license.</p>
+      <nav class="colophon__links" aria-label="Site">
+        <a href="/privacy/" aria-current="page">Privacy</a>
+        <a href="/support/">Support</a>
+        <a href="https://github.com/mahata/strongcopy">github.com/mahata/strongcopy</a>
+      </nav>
+    </footer>
+  </body>
+</html>

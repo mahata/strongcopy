@@ -111,6 +111,7 @@ h3 {
   padding: 1.75rem 0;
 }
 
+/* A link on every page but the one it points at, where it is a plain span. */
 .wordmark {
   display: inline-flex;
   align-items: center;
@@ -118,6 +119,8 @@ h3 {
   font-weight: 600;
   font-size: 1.0625rem;
   letter-spacing: -0.015em;
+  color: inherit;
+  text-decoration: none;
 }
 
 .wordmark img {
@@ -125,13 +128,13 @@ h3 {
   height: 1.75rem;
 }
 
-.masthead a {
+.masthead a:not(.wordmark) {
   font-size: 0.9375rem;
   color: var(--ink-muted);
   text-decoration: none;
 }
 
-.masthead a:hover {
+.masthead a:not(.wordmark):hover {
   color: var(--ink);
 }
 
@@ -197,13 +200,15 @@ h3 {
   height: 1.0625rem;
 }
 
-.actions .plain {
+.actions .plain,
+.doc-actions .plain {
   font-size: 1rem;
   color: var(--ink-muted);
   text-decoration: none;
 }
 
-.actions .plain:hover {
+.actions .plain:hover,
+.doc-actions .plain:hover {
   color: var(--ink);
 }
 
@@ -495,6 +500,72 @@ h3 {
   color: var(--ink-faint);
 }
 
+/* Document pages: privacy policy and support */
+
+.doc {
+  max-width: 44rem;
+  padding: clamp(2.25rem, 6vw, 3.75rem) 0 clamp(2.5rem, 6vw, 4rem);
+}
+
+.doc h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.032em;
+}
+
+.doc .updated {
+  margin: 0 0 2rem;
+  font-size: 0.875rem;
+  color: var(--ink-faint);
+}
+
+.doc .summary {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--hairline);
+  border-radius: 0.75rem;
+  background: var(--surface-sunken);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.doc h2 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.0625rem;
+}
+
+.doc p {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--ink-muted);
+}
+
+.doc p:last-child {
+  margin-bottom: 0;
+}
+
+.doc strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.doc code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+  color: var(--ink);
+}
+
+.doc .doc-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin: 2rem 0;
+}
+
 /* Colophon */
 
 .colophon {
@@ -518,6 +589,16 @@ h3 {
 }
 
 .colophon a:hover {
+  color: var(--ink);
+}
+
+.colophon__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.colophon__links a[aria-current="page"] {
   color: var(--ink);
 }
 

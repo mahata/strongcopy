@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Support — Strongcopy</title>
+    <meta name="description" content="Help with Strongcopy for macOS: how to report a problem, why the badge might not appear, launching at login, and uninstalling.">
+    <link rel="canonical" href="https://strongcopy.mahata.org/support/">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c0e14" media="(prefers-color-scheme: dark)">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Strongcopy">
+    <meta property="og:title" content="Support — Strongcopy">
+    <meta property="og:description" content="Help with Strongcopy for macOS: how to report a problem, why the badge might not appear, launching at login, and uninstalling.">
+    <meta property="og:url" content="https://strongcopy.mahata.org/support/">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../icon.svg">
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body>
+    <header class="masthead shell">
+      <a class="wordmark" href="/">
+        <img src="../icon.svg" alt="" width="28" height="28">
+        Strongcopy
+      </a>
+      <a href="https://github.com/mahata/strongcopy">GitHub</a>
+    </header>
+
+    <main class="shell">
+      <article class="doc">
+        <h1>Support</h1>
+        <p class="updated">macOS 13 or later · Apple silicon and Intel</p>
+
+        <p class="summary">
+          Strongcopy is a small open source project, and GitHub is where
+          questions and bug reports are read and answered. There is no queue and
+          no ticket number; issues are public, so an answer helps whoever asks
+          next.
+        </p>
+
+        <p class="doc-actions">
+          <a class="button" href="https://github.com/mahata/strongcopy/issues/new">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.25"/>
+              <path d="M8 4.75v3.5M8 11.1h.01"/>
+            </svg>
+            Report a problem
+          </a>
+          <a class="plain" href="https://github.com/mahata/strongcopy/issues">Browse existing issues</a>
+        </p>
+
+        <p>
+          A report is easiest to act on when it says which version of macOS you
+          are running, which version of Strongcopy you have (click the menu bar
+          icon and choose <strong>About Strongcopy</strong>), and what you
+          expected to happen instead.
+        </p>
+
+        <h2>The badge is not appearing</h2>
+        <p>
+          Check that the clipboard icon is in your menu bar. If it is missing,
+          Strongcopy is not running: open it from your Applications folder. On a
+          Mac with a notch, a crowded menu bar can hide the icon behind it, in
+          which case the app is running even though you cannot see it.
+        </p>
+        <p>
+          If the icon is there, remember the badge shows for eight tenths of a
+          second beside the pointer and then disappears, so it is easy to miss
+          while looking elsewhere on screen. Copy something and watch the
+          pointer.
+        </p>
+
+        <h2>It does not seem to work in one particular app</h2>
+        <p>
+          It should work everywhere. Strongcopy watches the system pasteboard
+          rather than intercepting Command-C, so copies made from menus,
+          keyboard shortcuts, scripts, and password managers all count the same.
+          An app where nothing appears is a bug worth reporting.
+        </p>
+
+        <h2>Does Strongcopy see what I copy?</h2>
+        <p>
+          No. It reads only the counter that macOS increments when the
+          pasteboard changes, never the contents, and it makes no network
+          connections. The <a href="/privacy/">privacy policy</a> covers this in
+          full, and the source is public so you need not take our word for it.
+        </p>
+
+        <h2>Starting Strongcopy with my Mac</h2>
+        <p>
+          Click the menu bar icon and choose <strong>Open at Login</strong>.
+          macOS may ask you to approve the login item; if it does, allow
+          Strongcopy under System Settings → General → Login Items.
+        </p>
+
+        <h2>Quitting and uninstalling</h2>
+        <p>
+          Click the menu bar icon and choose <strong>Quit Strongcopy</strong>.
+          To remove it, turn Open at Login off first, then drag Strongcopy from
+          your Applications folder to the Trash. It leaves behind no preferences
+          or support files to clean up.
+        </p>
+
+        <h2>What Strongcopy needs</h2>
+        <p>
+          macOS 13 Ventura or later, on either Apple silicon or Intel. Builds
+          are universal, so one download covers both. Strongcopy asks for
+          neither Accessibility nor notification permission.
+        </p>
+
+        <h2>Anything else</h2>
+        <p>
+          Feature ideas, questions, and reports of things that read wrong are
+          all welcome at
+          <a href="https://github.com/mahata/strongcopy/issues">github.com/mahata/strongcopy/issues</a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="colophon shell">
+      <p>Free and open source under the MIT license.</p>
+      <nav class="colophon__links" aria-label="Site">
+        <a href="/privacy/">Privacy</a>
+        <a href="/support/" aria-current="page">Support</a>
+        <a href="https://github.com/mahata/strongcopy">github.com/mahata/strongcopy</a>
+      </nav>
+    </footer>
+  </body>
+</html>
