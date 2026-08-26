@@ -91,6 +91,18 @@ scripts/verify-macos-package.sh dist/Strongcopy-0.1.0.dmg 0.1.0 1
 The package contains native slices for both Apple Silicon and Intel Macs.
 Ad-hoc local builds are not notarized and are intended only for development.
 
+Build the sandboxed Mac App Store package the same way:
+
+```bash
+scripts/package-mas.sh 0.1.0
+scripts/verify-mas-package.sh dist/Strongcopy-0.1.0.pkg 0.1.0 1
+```
+
+Without signing credentials this produces an ad-hoc-signed bundle in an unsigned
+package. That build still runs under the App Sandbox, so it is the way to check
+that sandboxing has not broken anything before spending a build number on an
+upload. Installing it and copying something should show the HUD as usual.
+
 ## Development
 
 This project uses Swift Package Manager and follows a TDD (Test-Driven Development) approach.
@@ -219,6 +231,69 @@ GitHub Actions must also have permission to write repository contents. Under
 **Settings > Actions > General > Workflow permissions**, select **Read and write
 permissions**. The automatically generated tag sets the marketing version,
 while the GitHub Actions run number supplies the bundle build number.
+
+### Publishing to the Mac App Store
+
+The App Store build is a second distribution of the same source, not a
+replacement for the DMG. Three things separate it from the Developer ID build:
+it runs under the App Sandbox, it carries a provisioning profile, and it is
+delivered as a signed installer package. Apple notarizes App Store builds
+itself, so `scripts/package-mas.sh` has no notarization step.
+
+Strongcopy needs no sandbox exceptions. The pasteboard change counter, the
+pointer location, the floating panel, and `SMAppService` registration all work
+inside the default sandbox, so `Packaging/Strongcopy.entitlements` asks only for
+`com.apple.security.app-sandbox`. The team-specific entitlements are added at
+packaging time from `TEAM_ID` so that no team identifier is committed.
+
+Preparing the first submission takes these steps:
+
+1. Join the Apple Developer Program and register the `org.mahata.strongcopy`
+   bundle identifier. Decide first whether the App Store build should use its
+   own identifier: if someone installs both it and the DMG, the two bundles
+   compete over the same login item registration.
+2. Create an **Apple Distribution** certificate, a **3rd Party Mac Developer
+   Installer** certificate, and a **Mac App Store** provisioning profile.
+3. Build and check the package:
+
+   ```bash
+   TEAM_ID=ABCDE12345 \
+   PROVISIONING_PROFILE=~/Strongcopy_MAS.provisionprofile \
+   APP_CODESIGN_IDENTITY="Apple Distribution: ..." \
+   INSTALLER_CODESIGN_IDENTITY="3rd Party Mac Developer Installer: ..." \
+   BUILD_NUMBER=1 \
+     scripts/package-mas.sh 0.1.0
+
+   REQUIRE_SUBMISSION_SIGNING=1 \
+     scripts/verify-mas-package.sh dist/Strongcopy-0.1.0.pkg 0.1.0 1
+   ```
+
+4. Create the app record in App Store Connect. It needs a support URL and a
+   privacy policy URL, both of which can live on
+   <https://strongcopy.mahata.org>, at least one screenshot sized 1280x800,
+   1440x900, 2560x1600, or 2880x1800, and a privacy declaration. Strongcopy
+   collects nothing, so every category answers "Data Not Collected".
+5. Upload the package with Transporter, or from the command line with the same
+   App Store Connect API key the release workflow uses for notarization:
+
+   ```bash
+   xcrun iTMSTransporter -m upload -assetFile dist/Strongcopy-0.1.0.pkg \
+       -apiKey "$APPLE_API_KEY_ID" -apiIssuer "$APPLE_API_ISSUER_ID"
+   ```
+
+   `altool` is deprecated, and `notarytool` only notarizes; neither uploads to
+   App Store Connect.
+6. Submit for review. `CFBundleVersion` has to increase on every upload, and a
+   build number that App Store Connect has already seen cannot be reused, which
+   is what `verify-mas-package.sh` exists to catch.
+
+Two review guidelines are worth reading before submitting. Guideline 4.2 asks
+that an app do enough to justify its own listing, and a menu bar app whose whole
+job is a brief HUD invites that question. Reviewers also reject accessory apps
+that appear to do nothing when opened, because `LSUIElement` means no window
+opens on launch. The review notes should therefore say that Strongcopy reads
+only the pasteboard change counter and never its contents, and should tell the
+reviewer to press Command-C and watch the pointer.
 
 ### Dependency Updates
 
