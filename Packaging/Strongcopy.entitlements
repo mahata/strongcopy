@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Entitlements for the Mac App Store build, which Apple requires to be
+	sandboxed. Nothing Strongcopy does needs a sandbox exception: the pasteboard
+	change counter, the pointer location, a floating panel, and SMAppService
+	registration for the main app are all available inside the default sandbox.
+
+	The team-specific `com.apple.application-identifier` and
+	`com.apple.developer.team-identifier` entitlements are added by
+	`scripts/package-mas.sh` from `TEAM_ID`, so no team identifier is committed.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+</dict>
+</plist>

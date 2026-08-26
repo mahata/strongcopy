@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-readonly APP_NAME="Strongcopy"
-readonly BUNDLE_IDENTIFIER="org.mahata.strongcopy"
-readonly MINIMUM_MACOS_VERSION="13.0"
+readonly SCRIPT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source-path=SCRIPTDIR
+source "$SCRIPT_DIRECTORY/lib/app-bundle.sh"
 
 usage() {
     echo "Usage: $0 <version> [output-directory]" >&2
@@ -20,24 +20,15 @@ readonly VERSION="$1"
 readonly BUILD_NUMBER="${BUILD_NUMBER:-1}"
 readonly CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
 
-if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Version must use MAJOR.MINOR.PATCH format: $VERSION" >&2
-    exit 64
-fi
+validate_version "$VERSION"
+validate_build_number "$BUILD_NUMBER"
 
-if [[ ! "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
-    echo "BUILD_NUMBER must be a positive integer: $BUILD_NUMBER" >&2
-    exit 64
-fi
-
-readonly ROOT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly ROOT_DIRECTORY="$(cd "$SCRIPT_DIRECTORY/.." && pwd)"
 readonly REQUESTED_OUTPUT_DIRECTORY="${2:-"$ROOT_DIRECTORY/dist"}"
 mkdir -p "$REQUESTED_OUTPUT_DIRECTORY"
 readonly OUTPUT_DIRECTORY="$(cd "$REQUESTED_OUTPUT_DIRECTORY" && pwd)"
-readonly SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 readonly WORK_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/strongcopy-package.XXXXXX")"
 readonly APP_BUNDLE="$WORK_DIRECTORY/$APP_NAME.app"
-readonly APP_EXECUTABLE="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 readonly APP_ICON="$APP_BUNDLE/Contents/Resources/AppIcon.icns"
 readonly DMG_ROOT="$WORK_DIRECTORY/dmg"
 readonly STAGING_DMG_PATH="$WORK_DIRECTORY/staging.dmg"
@@ -72,53 +63,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-build_architecture() {
-    local architecture="$1"
-    local scratch_path="$ROOT_DIRECTORY/.build/package-$architecture"
-    local target="$architecture-apple-macosx$MINIMUM_MACOS_VERSION"
-
-    swift build \
-        --package-path "$ROOT_DIRECTORY" \
-        --configuration release \
-        --scratch-path "$scratch_path" \
-        --triple "$target" \
-        --sdk "$SDK_PATH" \
-        --product "$APP_NAME" >&2
-
-    swift build \
-        --package-path "$ROOT_DIRECTORY" \
-        --configuration release \
-        --scratch-path "$scratch_path" \
-        --triple "$target" \
-        --sdk "$SDK_PATH" \
-        --product "$APP_NAME" \
-        --show-bin-path
-}
-
-echo "Building $APP_NAME $VERSION for arm64..."
-readonly ARM64_BINARY_DIRECTORY="$(build_architecture arm64)"
-echo "Building $APP_NAME $VERSION for x86_64..."
-readonly X86_64_BINARY_DIRECTORY="$(build_architecture x86_64)"
-
-mkdir -p "$(dirname "$APP_EXECUTABLE")"
-lipo -create \
-    "$ARM64_BINARY_DIRECTORY/$APP_NAME" \
-    "$X86_64_BINARY_DIRECTORY/$APP_NAME" \
-    -output "$APP_EXECUTABLE"
-chmod 755 "$APP_EXECUTABLE"
-
-cp "$ROOT_DIRECTORY/Packaging/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_IDENTIFIER" "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP_BUNDLE/Contents/Info.plist"
-
-echo "Generating the app icon..."
-mkdir -p "$(dirname "$APP_ICON")"
-swift run \
-    --package-path "$ROOT_DIRECTORY" \
-    --configuration release \
-    --scratch-path "$ROOT_DIRECTORY/.build/package-icon" \
-    GenerateAppIcon "$APP_ICON"
+assemble_app_bundle "$ROOT_DIRECTORY" "$APP_BUNDLE" "$VERSION" "$BUILD_NUMBER"
 
 if [[ "$CODESIGN_IDENTITY" == "-" ]]; then
     codesign --force --sign - "$APP_BUNDLE"
