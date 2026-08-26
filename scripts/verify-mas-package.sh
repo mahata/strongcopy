@@ -106,13 +106,26 @@ if [[ "${REQUIRE_SUBMISSION_SIGNING:-0}" == "1" ]]; then
         exit 1
     fi
 
-    readonly APPLICATION_IDENTIFIER="$(/usr/libexec/PlistBuddy -c "Print :com.apple.application-identifier" "$ENTITLEMENTS")"
-    if [[ "$APPLICATION_IDENTIFIER" != *".$BUNDLE_IDENTIFIER" ]]; then
-        echo "Unexpected application identifier entitlement: $APPLICATION_IDENTIFIER" >&2
+    # Assigned before being made read-only so that `set -e` still sees a missing
+    # entitlement: `readonly VAR="$(...)"` masks the exit status of the
+    # substitution and would leave the variable silently empty.
+    APPLICATION_IDENTIFIER="$(/usr/libexec/PlistBuddy -c "Print :com.apple.application-identifier" "$ENTITLEMENTS")"
+    TEAM_IDENTIFIER="$(/usr/libexec/PlistBuddy -c "Print :com.apple.developer.team-identifier" "$ENTITLEMENTS")"
+    readonly APPLICATION_IDENTIFIER TEAM_IDENTIFIER
+
+    if [[ ! "$TEAM_IDENTIFIER" =~ ^[A-Z0-9]{10}$ ]]; then
+        echo "Team identifier entitlement is not a 10-character team identifier: $TEAM_IDENTIFIER" >&2
         exit 1
     fi
 
-    /usr/libexec/PlistBuddy -c "Print :com.apple.developer.team-identifier" "$ENTITLEMENTS" > /dev/null
+    # App Store Connect reads the application identifier as the team identifier
+    # joined to the bundle identifier, so comparing the whole string catches a
+    # prefix that disagrees with the team identifier entitlement as well as a
+    # bundle identifier that is merely a suffix of the expected one.
+    if [[ "$APPLICATION_IDENTIFIER" != "$TEAM_IDENTIFIER.$BUNDLE_IDENTIFIER" ]]; then
+        echo "Unexpected application identifier entitlement: expected '$TEAM_IDENTIFIER.$BUNDLE_IDENTIFIER', got '$APPLICATION_IDENTIFIER'" >&2
+        exit 1
+    fi
 fi
 
 echo "Verified $PKG_PATH"
