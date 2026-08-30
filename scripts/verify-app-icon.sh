@@ -41,20 +41,20 @@ trap cleanup EXIT
 readonly ICONSET_DIRECTORY="$WORK_DIRECTORY/AppIcon.iconset"
 iconutil --convert iconset --output "$ICONSET_DIRECTORY" "$ICNS_PATH"
 
-for member in "${EXPECTED_MEMBERS[@]}"; do
-    if [[ ! -f "$ICONSET_DIRECTORY/${member%%:*}" ]]; then
-        echo "Icon is missing ${member%%:*}" >&2
-        exit 1
-    fi
-done
-
-assert_pixel_size() {
+assert_member() {
     local member="$1"
     local expected="$2"
+    local path="$ICONSET_DIRECTORY/$member"
+
+    if [[ ! -f "$path" ]]; then
+        echo "Icon is missing $member" >&2
+        exit 1
+    fi
+
     local width
     local height
-    width="$(sips -g pixelWidth "$ICONSET_DIRECTORY/$member" | awk '/pixelWidth/ { print $2 }')"
-    height="$(sips -g pixelHeight "$ICONSET_DIRECTORY/$member" | awk '/pixelHeight/ { print $2 }')"
+    width="$(sips -g pixelWidth "$path" | awk '/pixelWidth/ { print $2 }')"
+    height="$(sips -g pixelHeight "$path" | awk '/pixelHeight/ { print $2 }')"
 
     if [[ "$width" != "$expected" || "$height" != "$expected" ]]; then
         echo "Unexpected $member size: expected ${expected}x${expected}, got ${width}x${height}" >&2
@@ -63,7 +63,7 @@ assert_pixel_size() {
 }
 
 for member in "${EXPECTED_MEMBERS[@]}"; do
-    assert_pixel_size "${member%%:*}" "${member##*:}"
+    assert_member "${member%%:*}" "${member##*:}"
 done
 
 echo "Verified $ICNS_PATH"
