@@ -166,17 +166,35 @@ final class StatusMenuItemTests: XCTestCase {
 }
 
 final class StrongcopyLinksTests: XCTestCase {
-    func testPrivacyPolicyPointsAtThePublishedPage() {
-        XCTAssertEqual(
-            StrongcopyLinks.privacyPolicy,
-            "https://strongcopy.mahata.org/privacy/"
-        )
-    }
-
     // The menu action drops the click when the address fails to parse, so a typo
     // would otherwise turn the menu item into a no-op without failing a test.
     func testPrivacyPolicyAddressParsesAsAURL() {
         XCTAssertNotNil(URL(string: StrongcopyLinks.privacyPolicy))
+    }
+
+    // Comparing the constant against a copy of itself would pass even if the page
+    // it names had been moved or renamed, leaving the menu item pointing at a
+    // 404. Reading the address back out of the page that serves it pins the two
+    // together in the way the menu item actually depends on.
+    func testPrivacyPolicyAddressIsTheCanonicalAddressOfThePublishedPage() throws {
+        let url = try XCTUnwrap(URL(string: StrongcopyLinks.privacyPolicy))
+        let page = Self.packageRoot
+            .appendingPathComponent("web")
+            .appendingPathComponent(url.path)
+            .appendingPathComponent("index.html")
+        let markup = try String(contentsOf: page, encoding: .utf8)
+
+        XCTAssertTrue(
+            markup.contains("<link rel=\"canonical\" href=\"\(StrongcopyLinks.privacyPolicy)\">"),
+            "\(page.path) does not publish \(StrongcopyLinks.privacyPolicy) as its canonical address"
+        )
+    }
+
+    private static var packageRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
     }
 }
 
