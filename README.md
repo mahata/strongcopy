@@ -9,8 +9,8 @@ A macOS utility that confirms when data has been copied to the clipboard.
 Strongcopy runs as a background accessory app. It watches the macOS pasteboard
 change counter and briefly displays a non-activating **Copied** HUD near the
 mouse pointer whenever the clipboard changes. The app's icon appears in the menu
-bar to confirm that Strongcopy is running and provides **About** and **Quit**
-actions.
+bar to confirm that Strongcopy is running, and its menu carries **About
+Strongcopy**, **Privacy Policy**, **Open at Login**, and **Quit Strongcopy**.
 
 Strongcopy does not read, log, or retain clipboard contents. It also does not
 require Accessibility or notification permission.
@@ -22,9 +22,8 @@ require Accessibility or notification permission.
 
 ## Requirements
 
-- macOS 13.0 or later
-- Xcode 14.0 or later
-- Swift 6.2 or later
+To run Strongcopy, macOS 13.0 or later. To build it, Xcode 26 or later, which
+provides the Swift 6.2 toolchain that `Package.swift` requires.
 
 ## Getting Started
 
