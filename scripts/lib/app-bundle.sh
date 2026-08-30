@@ -78,9 +78,11 @@ assemble_app_bundle() {
         -output "$app_executable"
     chmod 755 "$app_executable"
 
+    # Version and build number are per-build, so they are written over the
+    # template's placeholders. Everything else, the bundle identifier included,
+    # is already correct in Packaging/Info.plist and is left alone.
     local info_plist="$app_bundle/Contents/Info.plist"
     cp "$root_directory/Packaging/Info.plist" "$info_plist"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_IDENTIFIER" "$info_plist"
     /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$info_plist"
     /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build_number" "$info_plist"
 
