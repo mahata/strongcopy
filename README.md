@@ -29,28 +29,15 @@ provides the Swift 6.2 toolchain that `Package.swift` requires.
 
 ### Installing Strongcopy
 
-1. Download `Strongcopy-<version>.dmg` from the
-   [latest GitHub Release](https://github.com/mahata/strongcopy/releases/latest).
-2. Open the DMG and drag **Strongcopy** to **Applications**.
-3. Open Strongcopy from Applications.
+Download `Strongcopy-<version>.dmg` from the
+[latest GitHub Release](https://github.com/mahata/strongcopy/releases/latest),
+open it, and drag **Strongcopy** to **Applications**. Release builds are signed
+with a Developer ID certificate and notarized by Apple, so Gatekeeper lets them
+through without a security override.
 
-Release builds are signed with a Developer ID certificate and notarized by
-Apple, so macOS Gatekeeper can verify them without requiring a security
-override. Strongcopy runs without a Dock icon; it puts its icon in the menu bar
-so you can confirm it is running. Click the menu bar icon and choose
-**Quit Strongcopy** to stop it, or **About Strongcopy** to see the version.
-
-### Opening Strongcopy at Login
-
-Click the menu bar icon and choose **Open at Login** to have macOS start
-Strongcopy automatically when you log in. The item is off until you turn it on,
-and choosing it again turns it back off. The checkmark reflects the system
-setting, so it stays accurate even if you change it from **System Settings >
-General > Login Items**.
-
-macOS may require you to approve the login item before it takes effect. When
-that happens, Strongcopy shows a dash instead of a checkmark and offers to open
-the relevant System Settings pane.
+Strongcopy has no Dock icon and no window; the menu bar icon is how you confirm
+it is running. Using it, launching it at login, and uninstalling it are covered
+on the [support page](https://strongcopy.mahata.org/support/).
 
 > [!NOTE]
 > **Open at Login** is greyed out unless Strongcopy runs from a real app bundle,
@@ -60,21 +47,11 @@ the relevant System Settings pane.
 > every build, so login items registered from them can go stale; notarized
 > releases are stable.
 
-### Building the App
+### Building, Running, and Testing
 
 ```bash
 swift build
-```
-
-### Running the App
-
-```bash
 swift run
-```
-
-### Running Tests
-
-```bash
 swift test
 ```
 
@@ -104,34 +81,10 @@ upload. Installing it and copying something should show the HUD as usual.
 
 ## Development
 
-This project uses Swift Package Manager and follows a TDD (Test-Driven Development) approach.
-
-### Project Structure
-
-```
-Strongcopy/
-├── Package.swift              # Swift Package Manager configuration
-├── Sources/
-│   ├── Strongcopy/
-│   │   ├── Strongcopy.swift        # Application entry point
-│   │   ├── AppDelegate.swift       # Application lifecycle
-│   │   ├── ClipboardMonitor.swift  # Pasteboard change detection
-│   │   ├── CopyFeedback.swift      # HUD feedback
-│   │   ├── StatusItemController.swift # Menu bar status item
-│   │   ├── LaunchAtLogin.swift     # Login item registration
-│   │   └── Scheduling.swift        # Timer abstraction
-│   ├── StrongcopyBrand/
-│   │   ├── BrandCanvas.swift       # Icon canvas, squircle, palette
-│   │   ├── BrandMark.swift         # Card and checkmark geometry
-│   │   └── BrandArtwork.swift      # App icon and menu bar renderings
-│   └── GenerateAppIcon/
-│       └── main.swift              # Writes AppIcon.icns
-├── Tests/
-│   └── StrongcopyTests/
-│       ├── StrongcopyTests.swift   # App unit tests
-│       └── BrandTests.swift        # Brand artwork unit tests
-└── web/                       # Website for strongcopy.mahata.org
-```
+This project uses Swift Package Manager and follows a TDD (Test-Driven
+Development) approach. `Sources/Strongcopy` is the app, `Sources/StrongcopyBrand`
+holds the artwork geometry shared by the app icon and the menu bar mark,
+`Sources/GenerateAppIcon` writes `AppIcon.icns`, and `web/` is the website.
 
 ### Website
 
@@ -162,7 +115,8 @@ The app links to the policy from its menu bar, because App Review guideline
 Store listing. That address is `StrongcopyLinks.privacyPolicy` in
 `Sources/Strongcopy/StatusItemController.swift`, so moving or renaming
 `web/privacy/` breaks the menu item unless the constant moves with it. A test
-pins the two together.
+reads the address back out of the `rel="canonical"` link on the page that serves
+it, so the two cannot drift apart silently.
 
 Preview it locally:
 
@@ -174,17 +128,6 @@ python3 -m http.server --directory web 8000
 changes. Because a successful CI run on `main` cuts a release, `ci.yml` ignores
 the website paths so editing a paragraph of copy does not ship a new version of
 the app.
-
-Setting the site up on a fresh repository takes three manual steps:
-
-1. Under **Settings > Pages**, set the source to **GitHub Actions** and the
-   custom domain to `strongcopy.mahata.org`. No `CNAME` file belongs in `web/`;
-   workflow-based publishing reads the domain from settings and ignores the file.
-2. In Cloudflare DNS, add `CNAME strongcopy -> mahata.github.io` with the proxy
-   **disabled**. Proxying intercepts the challenge GitHub uses to issue the
-   certificate. It can be turned on later, once HTTPS works, if the zone runs in
-   Full SSL mode.
-3. Once GitHub reports the certificate as issued, enable **Enforce HTTPS**.
 
 ### App Icon
 
@@ -213,16 +156,6 @@ scripts/verify-app-icon.sh /tmp/AppIcon.icns
 iconutil --convert iconset --output /tmp/AppIcon.iconset /tmp/AppIcon.icns
 open /tmp/AppIcon.iconset
 ```
-
-### Opening in Xcode
-
-On macOS, you can open this project in Xcode:
-
-```bash
-open Package.swift
-```
-
-Or double-click `Package.swift` in Finder.
 
 ### Publishing a Release
 
@@ -318,10 +251,11 @@ reviewer to press Command-C and watch the pointer.
 
 ### Dependency Updates
 
-Dependabot checks weekly for newer GitHub Actions and Swift package
-dependencies, opening one grouped pull request per ecosystem. Workflow actions
-are pinned to commit SHAs, and Dependabot updates the pin and its trailing
-version comment together, so the pins stay both current and explicit.
+Dependabot checks weekly for newer GitHub Actions, opening one grouped pull
+request. Workflow actions are pinned to commit SHAs, and Dependabot updates the
+pin and its trailing version comment together, so the pins stay both current and
+explicit. Strongcopy declares no external package dependencies, so there is
+nothing for a Swift ecosystem entry to update.
 
 Because merging to `main` publishes a release, each accepted update ships as a
 new patch version. Adjust the cadence in `.github/dependabot.yml` if that is
