@@ -127,8 +127,9 @@ python3 -m http.server --directory web 8000
 
 `.github/workflows/pages.yml` publishes `web/` to GitHub Pages when `main`
 changes. Because a successful CI run on `main` cuts a release, `ci.yml` ignores
-the website paths so editing a paragraph of copy does not ship a new version of
-the app.
+the website paths on pushes so editing a paragraph of copy does not ship a new
+version of the app. Pull requests still run CI, including the website regression
+tests, even when they change only website files.
 
 ### App Icon
 
