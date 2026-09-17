@@ -124,16 +124,20 @@ enum CopyHUDPlacement {
     }
 }
 
-private struct CopyHUDView: View {
+struct CopyHUDView: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)
             Text("Copied")
                 .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color(nsColor: .textColor))
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(
+            Color(nsColor: .windowBackgroundColor).opacity(0.5),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
     }
 }

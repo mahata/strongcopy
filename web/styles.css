@@ -11,7 +11,7 @@
   --surface-sunken: #f4f6f9;
   --hairline: #e4e7ec;
   --selection: rgba(44, 85, 232, 0.22);
-  --hud-surface: rgba(247, 248, 250, 0.78);
+  --hud-surface: rgba(247, 248, 250, 0.5);
   --hud-edge: rgba(0, 0, 0, 0.09);
   --hud-shadow: 0 10px 28px rgba(16, 20, 32, 0.16), 0 1px 3px rgba(16, 20, 32, 0.1);
   --confirm: #28cd41;
@@ -32,7 +32,7 @@
     --surface-sunken: #14171f;
     --hairline: #242833;
     --selection: rgba(131, 168, 255, 0.26);
-    --hud-surface: rgba(38, 42, 52, 0.82);
+    --hud-surface: rgba(38, 42, 52, 0.5);
     --hud-edge: rgba(255, 255, 255, 0.12);
     --hud-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
     --pointer-fill: #ffffff;
@@ -350,12 +350,6 @@ h3 {
   white-space: nowrap;
   margin: 0;
   animation: hud-enter 0.42s cubic-bezier(0.2, 0.72, 0.28, 1);
-}
-
-@supports (backdrop-filter: blur(1px)) {
-  .hud {
-    backdrop-filter: blur(18px) saturate(180%);
-  }
 }
 
 .hud svg {

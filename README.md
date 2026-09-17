@@ -8,8 +8,9 @@ A macOS utility that confirms when data has been copied to the clipboard.
 
 Strongcopy runs as a background accessory app. It watches the macOS pasteboard
 change counter and briefly displays a non-activating **Copied** HUD near the
-mouse pointer whenever the clipboard changes. The app's icon appears in the menu
-bar to confirm that Strongcopy is running, and its menu carries **About
+mouse pointer whenever the clipboard changes. Its half-transparent background
+leaves underlying content visible without blur. The app's icon appears in the
+menu bar to confirm that Strongcopy is running, and its menu carries **About
 Strongcopy**, **Privacy Policy**, **Open at Login**, and **Quit Strongcopy**.
 
 Strongcopy does not read, log, or retain clipboard contents. It also does not
@@ -126,8 +127,9 @@ python3 -m http.server --directory web 8000
 
 `.github/workflows/pages.yml` publishes `web/` to GitHub Pages when `main`
 changes. Because a successful CI run on `main` cuts a release, `ci.yml` ignores
-the website paths so editing a paragraph of copy does not ship a new version of
-the app.
+the website paths on pushes so editing a paragraph of copy does not ship a new
+version of the app. Pull requests still run CI, including the website regression
+tests, even when they change only website files.
 
 ### App Icon
 

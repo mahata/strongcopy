@@ -1,7 +1,7 @@
 name: CI
 
 # A successful CI run on main publishes a release, so changes that cannot affect
-# the app are kept out of this workflow. The landing page has its own.
+# the app are kept out of the push trigger. Pull requests always run the tests.
 on:
   push:
     branches: [main]
@@ -10,9 +10,6 @@ on:
       - ".github/workflows/pages.yml"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "web/**"
-      - ".github/workflows/pages.yml"
 
 concurrency:
   group: ci-${{ github.ref }}
